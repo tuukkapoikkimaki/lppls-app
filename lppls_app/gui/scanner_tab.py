@@ -7,7 +7,8 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDateEdit, QGroupBox,
                                QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget,
                                QListWidgetItem, QMessageBox, QProgressBar, QPushButton,
-                               QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+                               QSizePolicy, QSplitter, QTableWidget, QTableWidgetItem,
+                               QToolButton, QVBoxLayout, QWidget)
 
 from ..config import TEST_PRESETS, Config
 from ..plot import draw_scan
@@ -73,11 +74,25 @@ class ScannerTab(QWidget):
         for ticker, date, label in TEST_PRESETS:
             self.presets.addItem(f"{label} ({ticker}, {date})", (ticker, date))
         self.presets.activated.connect(self.apply_preset)
-        tbox = QGroupBox("Testaus historiallisilla kuplilla")
-        tl = QVBoxLayout(tbox)
+        # Avattava osio: otsikkonappi näyttää/piilottaa sisällön, oletuksena kiinni
+        self.test_toggle = QToolButton(checkable=True)
+        self.test_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.test_toggle.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.test_body = QWidget()
+        tl = QVBoxLayout(self.test_body)
+        tl.setContentsMargins(12, 0, 0, 0)
         tl.addWidget(self.asof_check)
         tl.addWidget(self.asof_date)
         tl.addWidget(self.presets)
+        self.test_toggle.toggled.connect(self._update_test_section)
+        self.asof_check.toggled.connect(self._update_test_section)
+        self.asof_date.dateChanged.connect(self._update_test_section)
+        tbox = QWidget()
+        tbl = QVBoxLayout(tbox)
+        tbl.setContentsMargins(0, 0, 0, 0)
+        tbl.addWidget(self.test_toggle)
+        tbl.addWidget(self.test_body)
+        self._update_test_section()
 
         # Skannaus
         self.scan_all_btn = QPushButton("Skannaa kaikki")
@@ -153,6 +168,19 @@ class ScannerTab(QWidget):
         for item in self.watch.selectedItems():
             self.storage.remove_ticker(item.data(Qt.UserRole))
         self.reload_watchlist()
+
+    def _update_test_section(self, *_):
+        opened = self.test_toggle.isChecked()
+        self.test_body.setVisible(opened)
+        self.test_toggle.setArrowType(Qt.DownArrow if opened else Qt.RightArrow)
+        if self.asof_check.isChecked():  # näkyy myös suljettuna, ettei testitila unohdu
+            title = f"Testitila päällä: {self.asof_date.date().toString('yyyy-MM-dd')}"
+        else:
+            title = "Testaus historiallisilla kuplilla"
+        self.test_toggle.setText(title)
+        self.test_toggle.setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; %s }"
+            % ("color: #b5520b;" if self.asof_check.isChecked() else ""))
 
     def apply_preset(self, index: int):
         data = self.presets.itemData(index)

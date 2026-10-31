@@ -32,7 +32,7 @@ Asennuksen jälkeen sovelluksen voi käynnistää myös komennolla `.venv/bin/lp
    🔴 kupla / 🟡 lähellä / ⚪ ei. Rivin valinta piirtää kuvaajan, ja *Tallenna PNG* tallentaa sen.
 4. **Kupla tallentuu automaattisesti** *Tallennetut kuplat* -välilehdelle, ja seuranta alkaa.
 
-**Testitila:** ruksaa *Testitila: as-of-päivä*, jolloin sovellus olettaa, että "tänään"
+**Testitila:** avaa vasemman reunan *Testaus historiallisilla kuplilla* -osio ja ruksaa *Testitila: as-of-päivä*, jolloin sovellus olettaa, että "tänään"
 on valittu päivä. Pikavalinnoissa on Bitcoin 2017-12-01, Shanghai 2007-10-01 ja Shanghai 2015-06-01.
 Testikuplat merkitään erikseen.
 
