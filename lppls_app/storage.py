@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from .config import DEFAULT_WATCHLIST, INDEX_WATCHLIST
+from .config import COMMODITY_WATCHLIST, DEFAULT_WATCHLIST, INDEX_WATCHLIST
 from .model import from_years
 from .scanner import ScanResult
 
-SCHEMA_VERSION = 3  # 2: seurantalistaan 75 osakeindeksiä, 3: hinnanmuutos (move)
+SCHEMA_VERSION = 4  # 2: 75 osakeindeksiä, 3: hinnanmuutos (move), 4: 39 raaka-ainetta
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -59,10 +59,14 @@ class Storage:
             cols = {r[1] for r in self.con.execute(f"PRAGMA table_info({table})")}
             if "move" not in cols:
                 self.con.execute(f"ALTER TABLE {table} ADD COLUMN move REAL")
-        if seed_watchlist and version < 2:
-            # Uusi kanta saa koko oletuslistan; vanhaan lisätään vain puuttuvat indeksit,
-            # eikä käyttäjän poistamia palauteta
-            seed = DEFAULT_WATCHLIST if version == 0 else INDEX_WATCHLIST
+        if seed_watchlist and version < SCHEMA_VERSION:
+            # Uusi kanta saa koko oletuslistan; vanhaan lisätään vain sen jälkeen tulleet
+            # tunnukset, eikä käyttäjän poistamia palauteta
+            if version == 0:
+                seed = DEFAULT_WATCHLIST
+            else:
+                seed = (INDEX_WATCHLIST if version < 2 else []) + \
+                       (COMMODITY_WATCHLIST if version < 4 else [])
             self.con.executemany(
                 "INSERT INTO watchlist(ticker, name, added, active) VALUES (?,?,?,1) "
                 "ON CONFLICT(ticker) DO NOTHING",

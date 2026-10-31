@@ -99,10 +99,60 @@ INDEX_WATCHLIST = [
     ("^JN0U.JO", "FTSE/JSE Top 40 (Etelä-Afrikka)"),
 ]
 
-DEFAULT_WATCHLIST = INDEX_WATCHLIST + [
+# Raaka-aineiden futuurit (jatkuva lähin sopimus) + 2 raaka-aineindeksiä; kaikki tarkistettu
+# Yahoo Financesta 1.11.2026. Mini/micro-sopimukset (QM, MGC …) jätetty pois kaksoiskappaleina.
+COMMODITY_WATCHLIST = [
+    # Energia
+    ("CL=F", "Raakaöljy WTI"),
+    ("BZ=F", "Raakaöljy Brent"),
+    ("NG=F", "Maakaasu Henry Hub"),
+    ("TTF=F", "Maakaasu TTF (Eurooppa)"),
+    ("HO=F", "Lämmitysöljy"),
+    ("RB=F", "Bensiini RBOB"),
+    # Jalometallit
+    ("GC=F", "Kulta"),
+    ("SI=F", "Hopea"),
+    ("PL=F", "Platina"),
+    ("PA=F", "Palladium"),
+    # Teollisuusmetallit
+    ("HG=F", "Kupari"),
+    ("ALI=F", "Alumiini"),
+    ("AUP=F", "Alumiini, Midwest-preemio"),
+    ("ZNC=F", "Sinkki"),
+    ("HRC=F", "Kuumavalssattu teräs"),
+    ("TIO=F", "Rautamalmi"),
+    # Viljat ja öljykasvit
+    ("ZC=F", "Maissi"),
+    ("ZW=F", "Vehnä (Chicago)"),
+    ("KE=F", "Vehnä (Kansas City)"),
+    ("ZS=F", "Soijapapu"),
+    ("ZM=F", "Soijarouhe"),
+    ("ZL=F", "Soijaöljy"),
+    ("ZO=F", "Kaura"),
+    ("ZR=F", "Riisi"),
+    # Pehmeät raaka-aineet
+    ("KC=F", "Kahvi"),
+    ("CC=F", "Kaakao"),
+    ("SB=F", "Sokeri"),
+    ("CT=F", "Puuvilla"),
+    ("OJ=F", "Appelsiinimehu"),
+    ("LBR=F", "Sahatavara"),
+    # Karja ja maitotuotteet
+    ("LE=F", "Elävä nauta"),
+    ("GF=F", "Syöttönauta"),
+    ("HE=F", "Lihasika"),
+    ("DC=F", "Maito (Class III)"),
+    ("DY=F", "Kuivattu hera"),
+    ("CSC=F", "Juusto"),
+    ("CB=F", "Voi"),
+    # Raaka-aineindeksit
+    ("^SPGSCI", "S&P GSCI -raaka-aineindeksi"),
+    ("GD=F", "S&P GSCI -futuuri"),
+]
+
+DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + [
     ("BTC-USD", "Bitcoin"),
     ("ETH-USD", "Ethereum"),
-    ("GC=F", "Kulta"),
 ]
 
 # Historialliset testikuplat (as-of-pikavalinnat)

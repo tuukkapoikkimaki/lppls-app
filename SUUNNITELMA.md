@@ -182,3 +182,14 @@ uudelleen: tulos säilyi ennallaan (6/8 historiallisesta kuplasta, 0/11 vertailu
 kuplaksi; S&P 500 ja NYSE FANG+ lokakuussa 2026 "lähellä"), joten raja-arvoja ei muutettu.
 Yksi ikkuna on nyt noin 4 %:n osuus, joten 10 %:n raja vaatii 3 hyväksyttyä ikkunaa.
 Skannaus noin 9 s/tunnus (4 ydintä).
+
+## Raaka-aineet seurantalistalle (1.11.2026)
+Käyttäjä pyysi 80 raaka-aineindeksiä. Yahoo Financesta löytyi päivädatana vain 39 erillistä
+raaka-ainetta: 37 futuuria (jatkuva lähin sopimus) sekä S&P GSCI -indeksi ja -futuuri.
+S&P GSCI:n ala-indeksit, Bloomberg Commodity, CRB ja Rogers palauttivat vain viimeisimmän
+päivän, ja mini- ja micro-sopimukset jätettiin pois kaksoiskappaleina. Skeemaversio 4 lisää
+raaka-aineet olemassa olevaan kantaan.
+
+Testiskannaus 30.10.2026: lämmitysöljy (HO=F) luokittui kuplaksi (+143 %, CI 21 %) ja
+kuumavalssattu teräs (HRC=F) tilaan "lähellä". Kaakaon 2024 kupla (as-of 1.4.2024, nousu +360 %)
+jäi tunnistamatta (CI 4 %): hinnannousuehto täyttyi, mutta LPPLS-suodattimen läpäisi vain yksi ikkuna.
