@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lppls-app"
+version = "0.1.0"
+description = "LPPLS-kuplaskanneri: tulevien kuplien havainnointi Sornetten mallilla"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "yfinance",
+    "PySide6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.gui-scripts]
+lppls-app = "lppls_app.gui.main_window:main"
+
+[tool.setuptools.packages.find]
+include = ["lppls_app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
