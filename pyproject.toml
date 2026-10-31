@@ -18,6 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest"]
+docs = ["reportlab"]
 
 [project.gui-scripts]
 lppls-app = "lppls_app.gui.main_window:main"
