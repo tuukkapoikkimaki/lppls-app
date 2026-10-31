@@ -174,3 +174,11 @@ Muutokset:
 Kalibrointi (19 tapausta, samat fitit eri raja-arvoilla): 6/8 historiallisesta kuplasta
 tunnistuu, 0/11 nyky- tai vertailutapauksesta luokittuu kuplaksi ja 1 luokittuu "lähellä"
 (NYFANG). Seurannan toteumaehto (≥ 15 %:n pudotus 90 päivässä) on ennallaan.
+
+## Ikkunat 24 kappaletta, pisin noin 4 vuotta (1.11.2026)
+Käyttäjän pyynnöstä ikkunasarja vaihdettiin 42 ikkunasta (125–740, 15 päivän välein) 24 tasaväliseen
+ikkunaan 125–1008 kauppapäivää, ja datan haku pidennettiin 1550 päivään. Kalibrointi ajettiin
+uudelleen: tulos säilyi ennallaan (6/8 historiallisesta kuplasta, 0/11 vertailutapauksesta
+kuplaksi; S&P 500 ja NYSE FANG+ lokakuussa 2026 "lähellä"), joten raja-arvoja ei muutettu.
+Yksi ikkuna on nyt noin 4 %:n osuus, joten 10 %:n raja vaatii 3 hyväksyttyä ikkunaa.
+Skannaus noin 9 s/tunnus (4 ydintä).

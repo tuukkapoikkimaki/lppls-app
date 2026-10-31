@@ -116,14 +116,14 @@ TEST_PRESETS = [
 @dataclass
 class Config:
     # Datan haku
-    lookback_days: int = 3 * 365
+    lookback_days: int = 1550  # ~4,2 v: riittää 1008 kauppapäivän ikkunaan pyhäpäivineen
     cache_max_age_hours: float = 24.0
 
     # Sovitusikkunat (kauppapäiviä); kaikki päättyvät as_of-päivään.
-    # Zhang, Zhang & Sornette (2016): 125–750 päivää 5 päivän välein; 15 nopeuden vuoksi.
+    # Lyhin 125 kuten Zhang, Zhang & Sornette (2016); pisin ~4 v (1008), 24 tasavälistä ikkunaa.
     window_min: int = 125
-    window_max: int = 750
-    window_step: int = 15
+    window_max: int = 1008
+    window_count: int = 24
     n_starts: int = 10
     tc_max_frac: float = 0.2  # haku: tc ≤ as_of + 0.2·dt (η = 0.2, sama lähde)
 

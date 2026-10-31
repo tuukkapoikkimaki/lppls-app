@@ -26,8 +26,8 @@ Asennuksen jälkeen sovelluksen voi käynnistää myös komennolla `.venv/bin/lp
    BTC, ETH ja kulta. Listaa voi rajata hakukentällä (esim. "intia", "dax"). Omia
    tunnuksia lisätään Yahoo Finance -tunnuksilla, esim. `NVDA`.
 2. *Skannaa kaikki* skannaa listassa näkyvät tunnukset (hakukenttä rajaa joukkoa), ja
-   *Skannaa valitut* vain valitut. Yksi tunnus vie noin 15 s (4 ytimellä), joten koko
-   lista vie noin 20 minuuttia.
+   *Skannaa valitut* vain valitut. Yksi tunnus vie noin 9 s (4 ytimellä), joten koko
+   lista vie noin 12 minuuttia.
 3. Taulukossa: confidence (+ = kupla, − = antikupla), mediaani-tc, tc-väli ja tila
    🔴 kupla / 🟡 lähellä / ⚪ ei. Rivin valinta piirtää kuvaajan, ja *Tallenna PNG* tallentaa sen.
 4. **Kupla tallentuu automaattisesti** *Tallennetut kuplat* -välilehdelle, ja seuranta alkaa.
@@ -49,8 +49,9 @@ Testikuplat merkitään erikseen.
 
 Kuplaksi luokitellaan vain tilanne, jossa **sekä** LPPLS-malli että hinnannousu täyttävät ehdot.
 
-**1. Sovitukset:** noin 3 vuotta päivittäisiä päätöskursseja. Ikkunat ovat 125–750
-kauppapäivää 15 päivän välein (Zhang, Zhang & Sornette 2016), ja kaikki päättyvät
+**1. Sovitukset:** noin 4 vuotta päivittäisiä päätöskursseja. Ikkunoita on 24 tasavälein
+125–1008 kauppapäivää eli noin puolesta vuodesta neljään vuoteen (lyhin kuten Zhang,
+Zhang & Sornette 2016). Kaikki ikkunat päättyvät
 as-of-päivään. A, B, C1 ja C2 ratkaistaan lineaarisesti, ja (tc, m, ω) haetaan Nelder–Meadilla
 (Filimonov & Sornette 2013).
 

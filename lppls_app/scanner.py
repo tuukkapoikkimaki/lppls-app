@@ -62,8 +62,9 @@ class ScanResult:
 
 
 def window_lengths(n_points: int, cfg: Config) -> list[int]:
-    hi = min(cfg.window_max, n_points)
-    return list(range(cfg.window_min, hi + 1, cfg.window_step))
+    """window_count tasavälistä pituutta; dataa pidemmät ikkunat jäävät pois."""
+    lengths = np.rint(np.linspace(cfg.window_min, cfg.window_max, cfg.window_count)).astype(int)
+    return [int(L) for L in lengths if L <= n_points]
 
 
 def _fit_window(args) -> tuple[int, LPPLSResult | None]:

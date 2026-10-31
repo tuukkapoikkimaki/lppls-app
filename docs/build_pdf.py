@@ -131,9 +131,9 @@ def story():
         "kasvamaan nopeammin kuin eksponentiaalisesti. Kasvu kiihtyy kohti kriittistä hetkeä "
         "<i>t<sub>c</sub></i>, jolloin romahduksen todennäköisyys on suurimmillaan, ja kiihtyvään "
         "trendiin liittyy log-periodisia värähtelyjä, jotka tihenevät <i>t<sub>c</sub></i>:tä "
-        "lähestyttäessä. Sovellus hakee jokaiselle seurattavalle tunnukselle noin kolmen vuoden "
+        "lähestyttäessä. Sovellus hakee jokaiselle seurattavalle tunnukselle noin neljän vuoden "
         "päivittäiset päätöskurssit Yahoo Financesta ja sovittaa mallin hintojen logaritmeihin "
-        "42 eri pituisessa aikaikkunassa, jotka kaikki päättyvät tarkastelupäivään. Sovitus tehdään "
+        "24 eri pituisessa aikaikkunassa (puolesta vuodesta neljään vuoteen), jotka kaikki päättyvät tarkastelupäivään. Sovitus tehdään "
         "Filimonovin ja Sornetten menetelmällä: neljä lineaarista parametria ratkaistaan suoraan "
         "pienimmän neliösumman menetelmällä, ja vain kolme epälineaarista parametria haetaan "
         "numeerisesti. Jokainen sovitus tarkistetaan kirjallisuudesta poimituilla ehdoilla. Niiden "
@@ -210,7 +210,7 @@ def story():
     # 3
     s += [P("3  Miten hintadataa käytetään estimointiin", H1), P("3.1  Aineisto", H2), P(
         "Sovellus hakee Yahoo Financesta päivittäiset päätöskurssit, jotka on korjattu osingoilla ja "
-        "osakesplittauksilla. Data haetaan noin kolmen vuoden ajalta tarkastelupäivään "
+        "osakesplittauksilla. Data haetaan noin neljän vuoden ajalta tarkastelupäivään "
         "<i>t</i><sub>2</sub> asti. Malliin syötetään hintojen logaritmit "
         "<i>y<sub>i</sub></i> = ln <i>p<sub>i</sub></i> hetkillä <i>t<sub>i</sub></i>, jotka on "
         "ilmaistu desimaalivuosina. Logaritmin ansiosta suhteelliset muutokset ovat samassa "
@@ -245,8 +245,9 @@ def story():
         "jotka eivät ole vielä päättyneet."),
       P("3.3  Monta ikkunaa ja luottamusindikaattori", H2), P(
         "Yksittäinen sovitus on herkkä sille, mistä päivästä aikaikkuna alkaa, koska kuplan "
-        "alkuhetkeä ei tunneta. Siksi sovitus tehdään 42 ikkunaan, joiden pituudet ovat 125, 140, …, "
-        "740 kauppapäivää ja jotka kaikki päättyvät hetkeen "
+        "alkuhetkeä ei tunneta. Siksi sovitus tehdään 24 ikkunaan, joiden pituudet ovat tasavälein "
+        "125, 163, 202, …, 1008 kauppapäivää (noin puolesta vuodesta neljään vuoteen; lyhin ikkuna "
+        "kuten Zhang, Zhang &amp; Sornette 2016) ja jotka kaikki päättyvät hetkeen "
         "<i>t</i><sub>2</sub>. Jokainen ikkuna antaa oman arvionsa parametreista. "
         "Luottamusindikaattori (<i>LPPLS confidence</i>) on niiden ikkunoiden osuus, joiden "
         "sovitus läpäisee luvun 4.1 suodattimen ja joiden <i>t<sub>c</sub></i> osuu horisontin "
@@ -259,13 +260,14 @@ def story():
         "Shanghain pörssin vuoden 2015 kuplaan tilanteessa 1.6.2015."),
       figure("kuva2_shanghai.png",
              "<b>Kuva 2.</b> Shanghai Composite, tarkastelupäivä 1.6.2015. Malli käytti vain sinisiä "
-             "pisteitä. Mediaani-<i>t<sub>c</sub></i> oli 7.6.2015, ja todellinen huippu tuli "
+             "pisteitä. Mediaani-<i>t<sub>c</sub></i> oli 5.6.2015, ja todellinen huippu tuli "
              "12.6.2015, minkä jälkeen indeksi laski yli 40 % (oranssit pisteet)."),
       figure("kuva3_ikkunat.png",
              "<b>Kuva 3.</b> Samat tiedot ikkunoittain. Jokainen vaakaviiva on yksi sovitusikkuna, "
              "joka päättyy 1.6.2015. Sinisten ikkunoiden sovitukset läpäisivät suodattimen, ja "
              "punaiset merkit ovat niiden <i>t<sub>c</sub></i>-arviot. Luottamusindikaattori oli "
-             "7/41 ≈ 17 %. Ikkunoita on 41 eikä 42, koska kolmen vuoden aineistossa oli vain 727 kauppapäivää.")]
+             "4/24 ≈ 17 %. Jokainen ikkuna vastaa noin neljää prosenttiyksikköä, joten kuplan raja 10 % "
+             "vaatii vähintään kolme hyväksyttyä ikkunaa.")]
 
     # 4
     s += [P("4  Kuplan havaitsemisen ehdot", H1), P("4.1  Sovituksen suodatin", H2), P(
@@ -330,19 +332,19 @@ def story():
         "Raja-arvot valittiin kokeilemalla eri yhdistelmiä kahdeksalla historiallisella kuplalla "
         "ja yhdellätoista vertailutapauksella (taulukko 3). Kuusi kahdeksasta kuplasta tunnistui, "
         "eikä yksikään vertailutapaus luokittunut kuplaksi. Vertailutapauksia olivat S&amp;P 500 "
-        "vuosina 2007 ja 2019, DAX 2014 sekä yhdeksän indeksiä lokakuussa 2026, joista NYSE FANG+ "
-        "luokittui tilaan ”lähellä”. Kriittisen hetken arvio osui 0–4 viikon päähän todellisesta "
+        "vuosina 2007 ja 2019, DAX 2014 sekä yhdeksän indeksiä lokakuussa 2026, joista S&amp;P 500 ja "
+        "NYSE FANG+ luokittuivat tilaan ”lähellä”. Kriittisen hetken arvio osui 0–4 viikon päähän todellisesta "
         "huipusta. Nikkei 1989 jäi tunnistamatta, koska sen nousu kahdessa vuodessa oli vain 69 %. "
         "Bitcoin maaliskuussa 2021 jäi tunnistamatta, koska vain harva ikkuna läpäisi suodattimen."),
       table([["Tapaus (tarkastelupäivä)", "CI", "Nousu 2 v", "Tulos", "Ennuste <i>t<sub>c</sub></i>", "Todellinen huippu"],
-             ["Bitcoin 1.12.2017", "21 %", "+2956 %", "kupla", "2.12.2017", "16.12.2017"],
-             ["Shanghai 1.10.2007", "15 %", "+414 %", "kupla", "7.11.2007", "16.10.2007"],
-             ["Shanghai 10.10.2007", "17 %", "+435 %", "kupla", "24.10.2007", "16.10.2007"],
-             ["Shanghai 1.6.2015", "17 %", "+148 %", "kupla", "7.6.2015", "12.6.2015"],
-             ["Nasdaq 15.2.2000", "31 %", "+212 %", "kupla", "16.2.2000", "10.3.2000"],
-             ["Nasdaq 1.3.2000", "40 %", "+237 %", "kupla", "4.3.2000", "10.3.2000"],
+             ["Bitcoin 1.12.2017", "17 %", "+2956 %", "kupla", "4.12.2017", "16.12.2017"],
+             ["Shanghai 1.10.2007", "13 %", "+414 %", "kupla", "31.10.2007", "16.10.2007"],
+             ["Shanghai 10.10.2007", "17 %", "+435 %", "kupla", "26.10.2007", "16.10.2007"],
+             ["Shanghai 1.6.2015", "17 %", "+148 %", "kupla", "5.6.2015", "12.6.2015"],
+             ["Nasdaq 15.2.2000", "25 %", "+212 %", "kupla", "16.2.2000", "10.3.2000"],
+             ["Nasdaq 1.3.2000", "38 %", "+237 %", "kupla", "4.3.2000", "10.3.2000"],
              ["Nikkei 225 15.11.1989", "0 %", "+69 %", "ei", "–", "29.12.1989"],
-             ["Bitcoin 15.3.2021", "2 %", "+1311 %", "ei", "–", "13.4.2021"]],
+             ["Bitcoin 15.3.2021", "4 %", "+1311 %", "ei", "–", "13.4.2021"]],
             [4.4 * cm, 1.3 * cm, 1.8 * cm, 1.4 * cm, 2.6 * cm, TEXT_WIDTH - 11.5 * cm]),
       P("<b>Taulukko 3.</b> Historialliset testikuplat nykyisillä ehdoilla.", CAPTION),
       P("Tuloksia on tulkittava varoen. Rajat valittiin samoilla tapauksilla, joilla niitä "
