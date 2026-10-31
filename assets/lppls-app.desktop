@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=LPPLS-kuplaskanneri
+Comment=Tulevien kuplien havainnointi Sornetten LPPLS-mallilla
+Exec=/home/mina/Desktop/Hommat/10_projektit/lppls-app/.venv/bin/python -m lppls_app
+Path=/home/mina/Desktop/Hommat/10_projektit/lppls-app
+Icon=/home/mina/Desktop/Hommat/10_projektit/lppls-app/assets/lppls-app.svg
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=lppls_app
