@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from .config import DEFAULT_WATCHLIST
+from .config import DEFAULT_WATCHLIST, INDEX_WATCHLIST
 from .model import from_years
 from .scanner import ScanResult
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: seurantalistaan 75 osakeindeksiä
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -54,11 +54,15 @@ class Storage:
         self.con.execute("PRAGMA foreign_keys=ON")
         version = self.con.execute("PRAGMA user_version").fetchone()[0]
         self.con.executescript(SCHEMA)
-        if version == 0:
-            self.con.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
-            if seed_watchlist:
-                for ticker, name in DEFAULT_WATCHLIST:
-                    self.add_ticker(ticker, name)
+        if seed_watchlist and version < SCHEMA_VERSION:
+            # Uusi kanta saa koko oletuslistan; vanhaan lisätään vain puuttuvat indeksit,
+            # eikä käyttäjän poistamia palauteta
+            seed = DEFAULT_WATCHLIST if version == 0 else INDEX_WATCHLIST
+            self.con.executemany(
+                "INSERT INTO watchlist(ticker, name, added, active) VALUES (?,?,?,1) "
+                "ON CONFLICT(ticker) DO NOTHING",
+                [(t, n, _now()) for t, n in seed])
+        self.con.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         self.con.commit()
 
     def close(self):
@@ -66,8 +70,11 @@ class Storage:
 
     # --- seurantalista ---
     def list_watchlist(self) -> list[sqlite3.Row]:
-        return self.con.execute(
-            "SELECT * FROM watchlist WHERE active=1 ORDER BY added, ticker").fetchall()
+        """Oletuslistan tunnukset sen järjestyksessä, käyttäjän lisäämät perässä."""
+        rows = self.con.execute(
+            "SELECT rowid AS pos, * FROM watchlist WHERE active=1").fetchall()
+        order = {t: i for i, (t, _) in enumerate(DEFAULT_WATCHLIST)}
+        return sorted(rows, key=lambda r: (order.get(r["ticker"], len(order)), r["pos"]))
 
     def add_ticker(self, ticker: str, name: str = ""):
         self.con.execute(

@@ -42,6 +42,9 @@ class ScannerTab(QWidget):
         # Seurantalista
         self.watch = QListWidget()
         self.watch.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.watch.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.filter = QLineEdit(placeholderText="Hae listasta…", clearButtonEnabled=True)
+        self.filter.textChanged.connect(self.apply_filter)
         self.new_ticker = QLineEdit(placeholderText="esim. NVDA tai ^OMXH25")
         self.new_ticker.returnPressed.connect(self.add_ticker)
         add_btn = QPushButton("Lisää")
@@ -51,8 +54,9 @@ class ScannerTab(QWidget):
         add_row = QHBoxLayout()
         add_row.addWidget(self.new_ticker, 1)
         add_row.addWidget(add_btn)
-        wbox = QGroupBox("Seurantalista")
+        self.wbox = wbox = QGroupBox("Seurantalista")
         wl = QVBoxLayout(wbox)
+        wl.addWidget(self.filter)
         wl.addWidget(self.watch, 1)
         wl.addLayout(add_row)
         wl.addWidget(rm_btn)
@@ -116,7 +120,7 @@ class ScannerTab(QWidget):
         split = QSplitter(Qt.Horizontal)
         split.addWidget(left)
         split.addWidget(right)
-        split.setSizes([260, 940])
+        split.setSizes([310, 890])
         lay = QHBoxLayout(self)
         lay.addWidget(split)
 
@@ -128,6 +132,14 @@ class ScannerTab(QWidget):
             item = QListWidgetItem(label)
             item.setData(Qt.UserRole, row["ticker"])
             self.watch.addItem(item)
+        self.wbox.setTitle(f"Seurantalista ({self.watch.count()})")
+        self.apply_filter(self.filter.text())
+
+    def apply_filter(self, text: str):
+        text = text.strip().lower()
+        for i in range(self.watch.count()):
+            item = self.watch.item(i)
+            item.setHidden(bool(text) and text not in item.text().lower())
 
     def add_ticker(self):
         ticker = self.new_ticker.text().strip().upper()
@@ -153,6 +165,8 @@ class ScannerTab(QWidget):
         for i in range(self.watch.count()):
             item = self.watch.item(i)
             item.setSelected(item.data(Qt.UserRole) == ticker)
+            if item.isSelected():
+                self.watch.scrollToItem(item)
 
     # --- skannaus ---
     def as_of(self) -> pd.Timestamp:
@@ -161,7 +175,9 @@ class ScannerTab(QWidget):
         return pd.Timestamp.today().normalize()
 
     def start_scan(self, all_: bool):
-        items = ([self.watch.item(i) for i in range(self.watch.count())] if all_
+        # "Kaikki" = listassa näkyvät, eli hakusuodatin rajaa skannausta
+        items = ([self.watch.item(i) for i in range(self.watch.count())
+                  if not self.watch.item(i).isHidden()] if all_
                  else self.watch.selectedItems())
         tickers = [it.data(Qt.UserRole) for it in items]
         if not tickers:

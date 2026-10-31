@@ -89,3 +89,27 @@ def test_cache_expires_for_recent_range(store):
     assert len(calls) == 1
     get_prices(store, "X", today - pd.Timedelta(days=31), today, max_age_hours=0, fetch=fake_fetch)
     assert len(calls) == 2
+
+
+def test_upgrade_adds_indices_and_keeps_user_choices(tmp_path):
+    import sqlite3
+
+    from lppls_app.config import INDEX_WATCHLIST
+
+    db = tmp_path / "old.db"
+    s = Storage(db, seed_watchlist=False)
+    s.add_ticker("NVDA")
+    s.add_ticker("^GSPC")
+    s.remove_ticker("^GSPC")  # käyttäjä poisti
+    s.close()
+    con = sqlite3.connect(db)
+    con.execute("PRAGMA user_version=1")  # vanha versio
+    con.commit()
+    con.close()
+
+    s = Storage(db)
+    tickers = [r["ticker"] for r in s.list_watchlist()]
+    assert "NVDA" in tickers
+    assert "^GSPC" not in tickers
+    assert len(tickers) == len(INDEX_WATCHLIST)  # 74 indeksiä + NVDA
+    assert tickers[0] == "^DJI" and tickers[-1] == "NVDA"
