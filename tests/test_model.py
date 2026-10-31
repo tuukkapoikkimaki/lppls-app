@@ -6,7 +6,7 @@ from lppls_app.model import fit_lppls, is_qualified, lppls
 
 def test_fit_recovers_parameters():
     t = np.linspace(2000, 2002, 500)
-    y = lppls(t, 2002.15, 0.5, 9.0, 5, -1.0, 0.1, 0.05)
+    y = lppls(t, 2002.15, 0.5, 9.0, 5, -1.0, 0.05, 0.02)
     y += np.random.default_rng(1).normal(0, 0.01, len(t))
     r = fit_lppls(t, y, (t[-1] + 0.003, t[-1] + 1.0), (0.01, 0.99), (2, 25), seed=0)
     assert abs(r.tc - 2002.15) < 0.02 * 2
@@ -18,7 +18,7 @@ def test_fit_recovers_parameters():
 
 def test_negative_bubble_sign():
     t = np.linspace(2000, 2002, 500)
-    y = lppls(t, 2002.15, 0.5, 9.0, 5, +1.0, 0.1, 0.05)
+    y = lppls(t, 2002.15, 0.5, 9.0, 5, +1.0, 0.05, 0.02)
     r = fit_lppls(t, y, (t[-1] + 0.003, t[-1] + 1.0), (0.01, 0.99), (2, 25), seed=0)
     assert is_qualified(r, Config()) == "neg"
 
@@ -26,3 +26,12 @@ def test_negative_bubble_sign():
 def test_too_short_series():
     t = np.linspace(2000, 2000.1, 10)
     assert fit_lppls(t, np.ones(10), (2000.2, 2001)) is None
+
+
+def test_damping_filter_rejects_strong_oscillations():
+    t = np.linspace(2000, 2002, 500)
+    # |C| suuri suhteessa |B|:hen → damping < 0.5
+    y = lppls(t, 2002.15, 0.5, 9.0, 5, -1.0, 0.3, 0.2)
+    r = fit_lppls(t, y, (t[-1] + 0.003, t[-1] + 1.0), (0.01, 0.99), (2, 25), seed=0)
+    assert r.damping < 0.5
+    assert is_qualified(r, Config()) is None

@@ -17,7 +17,8 @@ from .workers import ScanWorker
 
 STATUS_LABEL = {"kupla": "🔴 kupla", "lähellä": "🟡 lähellä", "ei": "⚪ ei"}
 STATUS_COLOR = {"kupla": QColor(255, 220, 220), "lähellä": QColor(255, 245, 205)}
-COLUMNS = ["Tunnus", "Conf +", "Conf −", "Mediaani-tc", "tc-väli (10–90 %)", "Päiviä tc:hen", "Tila"]
+COLUMNS = ["Tunnus", "Conf +", "Conf −", "Muutos 2 v", "Mediaani-tc", "tc-väli (10–90 %)",
+           "Päiviä tc:hen", "Tila"]
 
 
 def _d(ts) -> str:
@@ -231,7 +232,8 @@ class ScannerTab(QWidget):
         row = self.table.rowCount()
         self.table.insertRow(row)
         days = "–" if sr.tc_median is None else str((sr.tc_median - sr.as_of).days)
-        values = [sr.ticker, f"{sr.conf_pos:.0%}", f"{sr.conf_neg:.0%}", _d(sr.tc_median),
+        move = f"{sr.change:+.0%}"
+        values = [sr.ticker, f"{sr.conf_pos:.0%}", f"{sr.conf_neg:.0%}", move, _d(sr.tc_median),
                   f"{_d(sr.tc_p10)} … {_d(sr.tc_p90)}" if sr.tc_p10 is not None else "–",
                   days, STATUS_LABEL[status]]
         for col, v in enumerate(values):

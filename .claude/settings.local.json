@@ -4,7 +4,8 @@
       "Bash(.venv/bin/python -)",
       "Bash(.venv/bin/python -c ' *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "WebSearch"
     ]
   }
 }

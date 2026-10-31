@@ -158,3 +158,19 @@ Huom: työkalu on tutkimus- ja opiskelukäyttöön, eikä LPPLS-ennuste ole sijo
 - Toteuman arvioinnissa käännettä haetaan havaintopäivästä tc-välin loppuun, joten myös
   ennustettua aikaisempi huippu löytyy (näkyy negatiivisena erona).
 - Kupla-taulussa on lisäksi sarakkeet `tc_years`, `window_start` ja `tracking`.
+
+## Kuplakriteerien tarkennus (31.10.2026)
+Ensimmäinen versio löysi 7 "kuplaa" nykyindekseistä (esim. NZ50, jonka 2 vuoden nousu oli +9 %).
+Syyt: suodattimessa ei ollut damping-ehtoa (kaikkien 7 damping oli 0.22–0.47), tc sai olla
+jopa 0.5·ikkunan päässä, eikä hinnannousulle ollut mitään vaatimusta.
+
+Muutokset:
+- Suodatin: damping ≥ 0.5, ω 4–25, tc ≤ as_of + 0.13·dt, log-RMSE ≤ 0.15, ikkunat 125–750.
+  Sornetten ryhmän damping ≥ 1 (Zhang ym. 2016) hylkäsi myös 7/8 testikuplaa, koska
+  sovitusmenetelmämme tuottaa pienempiä damping-arvoja, joten käytössä on Wheatleyn ym. (2018) 0.5.
+- Uusi hintaehto (Greenwood, Shleifer & You 2019): 2 vuoden nousu ≥ 100 % = kupla, 50 % = lähellä.
+- Confidence-raja 15 % → 10 %, koska tiukempi suodatin pienentää osuuksia.
+
+Kalibrointi (19 tapausta, samat fitit eri raja-arvoilla): 6/8 historiallisesta kuplasta
+tunnistuu, 0/11 nyky- tai vertailutapauksesta luokittuu kuplaksi ja 1 luokittuu "lähellä"
+(NYFANG). Seurannan toteumaehto (≥ 15 %:n pudotus 90 päivässä) on ennallaan.

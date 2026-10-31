@@ -11,7 +11,7 @@ from .config import DEFAULT_WATCHLIST, INDEX_WATCHLIST
 from .model import from_years
 from .scanner import ScanResult
 
-SCHEMA_VERSION = 2  # 2: seurantalistaan 75 osakeindeksiä
+SCHEMA_VERSION = 3  # 2: seurantalistaan 75 osakeindeksiä, 3: hinnanmuutos (move)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -20,14 +20,15 @@ CREATE TABLE IF NOT EXISTS price_cache (
     ticker TEXT, date TEXT, price REAL, fetched_at TEXT, PRIMARY KEY (ticker, date));
 CREATE TABLE IF NOT EXISTS scans (
     id INTEGER PRIMARY KEY, ticker TEXT, as_of TEXT, run_at TEXT,
-    conf_pos REAL, conf_neg REAL, tc_median TEXT, tc_p10 TEXT, tc_p90 TEXT);
+    conf_pos REAL, conf_neg REAL, tc_median TEXT, tc_p10 TEXT, tc_p90 TEXT, move REAL);
 CREATE TABLE IF NOT EXISTS bubbles (
     id INTEGER PRIMARY KEY, ticker TEXT, scan_id INTEGER REFERENCES scans(id),
     detected_as_of TEXT, is_test INTEGER, sign TEXT, confidence REAL,
     tc TEXT, tc_years REAL, tc_p10 TEXT, tc_p90 TEXT, window_start TEXT,
     m REAL, omega REAL, A REAL, B REAL, C1 REAL, C2 REAL, r2 REAL,
     status TEXT DEFAULT 'odottaa', actual_peak_date TEXT, actual_peak_price REAL,
-    max_drawdown REAL, last_updated TEXT, tracking INTEGER DEFAULT 1, note TEXT);
+    max_drawdown REAL, last_updated TEXT, tracking INTEGER DEFAULT 1, note TEXT,
+    move REAL);
 CREATE TABLE IF NOT EXISTS bubble_prices (
     bubble_id INTEGER REFERENCES bubbles(id) ON DELETE CASCADE,
     date TEXT, price REAL, PRIMARY KEY (bubble_id, date));
@@ -54,7 +55,11 @@ class Storage:
         self.con.execute("PRAGMA foreign_keys=ON")
         version = self.con.execute("PRAGMA user_version").fetchone()[0]
         self.con.executescript(SCHEMA)
-        if seed_watchlist and version < SCHEMA_VERSION:
+        for table in ("scans", "bubbles"):  # v3: vanhoihin tauluihin move-sarake
+            cols = {r[1] for r in self.con.execute(f"PRAGMA table_info({table})")}
+            if "move" not in cols:
+                self.con.execute(f"ALTER TABLE {table} ADD COLUMN move REAL")
+        if seed_watchlist and version < 2:
             # Uusi kanta saa koko oletuslistan; vanhaan lisätään vain puuttuvat indeksit,
             # eikä käyttäjän poistamia palauteta
             seed = DEFAULT_WATCHLIST if version == 0 else INDEX_WATCHLIST
@@ -107,10 +112,10 @@ class Storage:
     # --- skannaukset ja kuplat ---
     def save_scan(self, sr: ScanResult) -> int:
         cur = self.con.execute(
-            "INSERT INTO scans(ticker, as_of, run_at, conf_pos, conf_neg, tc_median, tc_p10, tc_p90) "
-            "VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO scans(ticker, as_of, run_at, conf_pos, conf_neg, tc_median, tc_p10, tc_p90, "
+            "move) VALUES (?,?,?,?,?,?,?,?,?)",
             (sr.ticker, _d(sr.as_of), _now(), sr.conf_pos, sr.conf_neg,
-             _d(sr.tc_median), _d(sr.tc_p10), _d(sr.tc_p90)))
+             _d(sr.tc_median), _d(sr.tc_p10), _d(sr.tc_p90), sr.change))
         self.con.commit()
         return cur.lastrowid
 
@@ -127,7 +132,7 @@ class Storage:
             sign=sr.sign, confidence=sr.confidence, tc=_d(tc), tc_years=b.tc,
             tc_p10=_d(sr.tc_p10), tc_p90=_d(sr.tc_p90),
             window_start=_d(from_years(b.t1)),
-            m=b.m, omega=b.omega, A=b.A, B=b.B, C1=b.C1, C2=b.C2, r2=b.r2,
+            m=b.m, omega=b.omega, A=b.A, B=b.B, C1=b.C1, C2=b.C2, r2=b.r2, move=sr.change,
             last_updated=_now(),
         )
         if dup:

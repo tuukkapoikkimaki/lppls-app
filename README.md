@@ -47,15 +47,52 @@ Testikuplat merkitään erikseen.
 
 ## Miten havainto toimii
 
-- Data: noin 3 vuotta päivittäisiä päätöskursseja (yfinance), välimuistissa SQLitessä.
-- Ikkunat: 60–750 kauppapäivää 15 päivän välein, kaikki päättyvät as-of-päivään.
-- Sovitus: Filimonov & Sornette (2013). A, B, C1 ja C2 ratkaistaan lineaarisesti, ja
-  (tc, m, ω) haetaan Nelder–Meadilla 10 alkupisteestä. tc rajataan tulevaisuuteen.
-- Suodatin: 0.1 < m < 0.9, 6 < ω < 13, |C|/|B| < 1 ja puolivärähtelyjä ≥ 2.5.
-- **Confidence** = niiden ikkunoiden osuus, joiden sovitus läpäisee suodattimen ja
-  joiden tc osuu 6 kuukauden sisään. Kupla havaitaan, kun confidence ≥ 15 %.
+Kuplaksi luokitellaan vain tilanne, jossa **sekä** LPPLS-malli että hinnannousu täyttävät ehdot.
 
-Kaikki rajat ja kynnykset ovat tiedostossa [lppls_app/config.py](lppls_app/config.py).
+**1. Sovitukset:** noin 3 vuotta päivittäisiä päätöskursseja. Ikkunat ovat 125–750
+kauppapäivää 15 päivän välein (Zhang, Zhang & Sornette 2016), ja kaikki päättyvät
+as-of-päivään. A, B, C1 ja C2 ratkaistaan lineaarisesti, ja (tc, m, ω) haetaan Nelder–Meadilla
+(Filimonov & Sornette 2013).
+
+**2. Sovituksen suodatin**, jonka jokaisen ikkunan sovituksen pitää läpäistä:
+
+| Ehto | Raja | Lähde |
+|---|---|---|
+| eksponentti m | 0.1 – 0.9 | Zhang, Zhang & Sornette 2016 |
+| log-taajuus ω | 4 – 25 | Wheatley ym. 2018 (Bitcoin-LPPLS), lppls-kirjasto |
+| damping m\|B\|/(ω\|C\|) | ≥ 0.5 | sama |
+| puolivärähtelyt ω/π·ln((tc−t1)/(tc−t2)) | ≥ 2.5 | Zhang, Zhang & Sornette 2016 |
+| kriittinen hetki tc | as-of < tc ≤ as-of + 0.13·ikkuna | sama (vain tulevaisuuteen) |
+| sovitusvirhe (log-RMSE) | ≤ 0.15 | kalibroitu testikuplilla |
+| B | < 0 kupla, > 0 antikupla | |
+
+**3. Confidence** on niiden ikkunoiden osuus, jotka läpäisevät suodattimen ja joiden tc osuu
+6 kuukauden sisään. Raja on ≥ 10 %.
+
+**4. Hinnannousu 2 vuodessa** (nykyhinta / 2 vuoden pohja): **≥ 100 %**. Greenwood,
+Shleifer & You (2019) havaitsivat, että 100 %:n nousu kahdessa vuodessa nostaa 40 %:n
+romahduksen todennäköisyyden noin 53 %:iin, kun 50 %:n nousulla se on noin 20 %.
+Antikuplalla vastaava ehto on lasku ≥ 50 %.
+
+| Tila | Ehdot |
+|---|---|
+| 🔴 kupla | confidence ≥ 10 %, mediaani-tc 6 kk sisällä, muutos ≥ 100 % |
+| 🟡 lähellä | confidence ≥ 5 % ja muutos ≥ 50 % |
+| ⚪ ei | muut |
+
+Testikuplilla 6/8 tunnistuu kupliksi: BTC 2017, Shanghai 2007 (kaksi päivää), Shanghai 2015 ja
+Nasdaq 2000 (kaksi päivää). Nikkei 1989 jää tunnistamatta (nousu vain +69 %), samoin BTC
+maaliskuu 2021. Kalibrointi on tehty samoilla tapauksilla, joten tarkkuus uusilla
+aineistoilla on todennäköisesti heikompi.
+
+Kaikki rajat ovat tiedostossa [lppls_app/config.py](lppls_app/config.py).
+
+### Lähteet
+- Filimonov, V. & Sornette, D. (2013). A stable and robust calibration scheme of the log-periodic power law model. *Physica A* 392.
+- Zhang, Q., Zhang, Q. & Sornette, D. (2016). Early warning signals of financial crises with multi-scale quantile regressions of LPPLS. *PLoS ONE* 11(11). https://pmc.ncbi.nlm.nih.gov/articles/PMC5091919/
+- Wheatley, S., Sornette, D. ym. (2018). Are Bitcoin bubbles predictable? https://arxiv.org/abs/1803.05663
+- Greenwood, R., Shleifer, A. & You, Y. (2019). Bubbles for Fama. *Journal of Financial Economics* 131(1). https://www.nber.org/papers/w23191
+- Johansen, A. & Sornette, D. (2010). Shocks, crashes and bubbles in financial markets. https://arxiv.org/abs/cond-mat/0210509
 
 ## Tiedostot
 

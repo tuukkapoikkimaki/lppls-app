@@ -33,16 +33,30 @@ class ScanResult:
     tc_p10: pd.Timestamp | None = None
     tc_p90: pd.Timestamp | None = None
     best: LPPLSResult | None = None  # mediaani-tc:tä lähin hyväksytty sovitus
+    runup: float = 0.0     # nousu runup_days-jakson pohjasta
+    drawdown: float = 0.0  # lasku saman jakson huipusta
     detected: bool = False
 
     @property
     def confidence(self) -> float:
         return max(self.conf_pos, self.conf_neg)
 
+    @property
+    def move(self) -> float:
+        """Kuplan suuntainen hinnanmuutos log-asteikolla (+100 % ≙ −50 %)."""
+        if self.sign == "neg":
+            return 1.0 / (1.0 - self.drawdown) - 1.0 if self.drawdown < 1 else np.inf
+        return self.runup
+
+    @property
+    def change(self) -> float:
+        """Toteutunut muutos kuplan suuntaan: nousu (+) tai lasku (−)."""
+        return -self.drawdown if self.sign == "neg" else self.runup
+
     def status(self, cfg: Config) -> str:
         if self.detected:
             return "kupla"
-        if self.confidence >= cfg.near_threshold:
+        if self.confidence >= cfg.near_threshold and self.move >= cfg.near_runup:
             return "lähellä"
         return "ei"
 
@@ -93,6 +107,11 @@ def summarize(ticker: str, series: pd.Series, as_of, fits: list[WindowFit],
     as_of = pd.Timestamp(as_of).normalize()
     horizon_end = to_years(as_of + pd.Timedelta(days=cfg.horizon_days))
     sr = ScanResult(ticker, as_of, series, fits)
+    recent = series[series.index >= as_of - pd.Timedelta(days=cfg.runup_days)]
+    if not recent.empty:
+        last = float(recent.iloc[-1])
+        sr.runup = last / float(recent.min()) - 1.0
+        sr.drawdown = 1.0 - last / float(recent.max())
     n = len(fits)
     if n == 0:
         return sr
@@ -114,7 +133,8 @@ def summarize(ticker: str, series: pd.Series, as_of, fits: list[WindowFit],
     sr.tc_p90 = from_years(float(np.percentile(tcs, 90)))
     sr.best = min(chosen, key=lambda f: abs(f.result.tc - med)).result
     sr.detected = (sr.confidence >= cfg.confidence_threshold
-                   and med <= horizon_end)
+                   and med <= horizon_end
+                   and sr.move >= cfg.min_runup)
     return sr
 
 

@@ -119,26 +119,37 @@ class Config:
     lookback_days: int = 3 * 365
     cache_max_age_hours: float = 24.0
 
-    # Sovitusikkunat (kauppapäiviä); kaikki päättyvät as_of-päivään
-    window_min: int = 60
+    # Sovitusikkunat (kauppapäiviä); kaikki päättyvät as_of-päivään.
+    # Zhang, Zhang & Sornette (2016): 125–750 päivää 5 päivän välein; 15 nopeuden vuoksi.
+    window_min: int = 125
     window_max: int = 750
     window_step: int = 15
     n_starts: int = 10
-    tc_max_frac: float = 0.5  # tc ≤ as_of + 0.5·ikkunan pituus
+    tc_max_frac: float = 0.2  # haku: tc ≤ as_of + 0.2·dt (η = 0.2, sama lähde)
 
     # Hakualue on väljempi kuin kuplaehdot, jotta optimi ei jää rajalle
     m_search: tuple[float, float] = (0.01, 0.99)
     omega_search: tuple[float, float] = (2.0, 25.0)
 
-    # Kuplaehdot (Sornetten suodatin)
+    # Sovituksen suodatin. m, värähtelyt ja tc-raja: Zhang, Zhang & Sornette (2016).
+    # ω ja damping: Bitcoin-LPPLS (Wheatley ym. 2018) ja lppls-kirjasto; Sornetten ryhmän
+    # damping ≥ 1 hylkäsi myös kaikki testikuplat, ks. SUUNNITELMA.md.
     m_bounds: tuple[float, float] = (0.1, 0.9)
-    omega_bounds: tuple[float, float] = (6.0, 13.0)
-    max_c_over_b: float = 1.0
-    min_oscillations: float = 2.5
+    omega_bounds: tuple[float, float] = (4.0, 25.0)
+    min_damping: float = 0.5       # m|B|/(ω|C|)
+    min_oscillations: float = 2.5  # ω/π·ln((tc−t1)/(tc−t2))
+    tc_qual_frac: float = 0.13     # hyväksytty tc ≤ as_of + 0.13·dt
+    max_rel_error: float = 0.15    # log-residuaalien RMSE (kalibroitu)
+
+    # Hinnannousuehto (Greenwood, Shleifer & You 2019): 2 vuoden nousu ≥ 100 % → kaatumisen
+    # todennäköisyys n. 53 %, 50 % → n. 20 %. Antikuplalle peilikuva log-asteikolla (−50 %).
+    runup_days: int = 730
+    min_runup: float = 1.00        # kupla
+    near_runup: float = 0.50       # lähellä
 
     # Havainto
     horizon_days: int = 182
-    confidence_threshold: float = 0.15
+    confidence_threshold: float = 0.10
     near_threshold: float = 0.05  # 🟡 "lähellä"
 
     # Seuranta

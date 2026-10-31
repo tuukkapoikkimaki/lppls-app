@@ -55,6 +55,12 @@ class LPPLSResult:
         return self.omega / math.pi * math.log((self.tc - self.t1) / (self.tc - self.t2))
 
     @property
+    def damping(self) -> float:
+        """m|B|/(ω|C|); ≥ 1 takaa, että kaatumisriski h(t) pysyy ei-negatiivisena."""
+        C = self.C
+        return math.inf if C == 0 else self.m * abs(self.B) / (self.omega * C)
+
+    @property
     def tc_date(self) -> pd.Timestamp:
         return from_years(self.tc)
 
@@ -128,16 +134,20 @@ def fit_lppls(
 
 
 def is_qualified(res: LPPLSResult, cfg) -> str | None:
-    """Palauttaa 'pos' (kupla), 'neg' (antikupla) tai None, jos ehdot eivät täyty."""
-    if res is None:
+    """Palauttaa 'pos' (kupla), 'neg' (antikupla) tai None, jos suodatin ei täyty.
+
+    Ehdot: Zhang, Zhang & Sornette (2016), "DS LPPLS Confidence" -suodatin.
+    """
+    if res is None or res.B == 0:
         return None
     m_lo, m_hi = cfg.m_bounds
     w_lo, w_hi = cfg.omega_bounds
-    eps = 1e-3  # rajalle jääneet sovitukset hylätään
-    if not (m_lo + eps < res.m < m_hi - eps and w_lo + eps < res.omega < w_hi - eps):
+    if not (m_lo < res.m < m_hi and w_lo < res.omega < w_hi):
         return None
-    if res.B == 0 or res.C / abs(res.B) >= cfg.max_c_over_b:
+    if res.damping < cfg.min_damping or res.oscillations < cfg.min_oscillations:
         return None
-    if res.oscillations < cfg.min_oscillations:
+    if res.tc - res.t2 > cfg.tc_qual_frac * (res.t2 - res.t1):
+        return None
+    if res.rmse > cfg.max_rel_error:
         return None
     return "pos" if res.B < 0 else "neg"

@@ -25,3 +25,11 @@ def test_as_of_cuts_future_data(cfg):
     s = synthetic_bubble(as_of="2020-06-01")
     sr = scan_series("SYN", s, "2020-03-01", cfg)
     assert sr.series.index[-1] <= pd.Timestamp("2020-03-01")
+
+
+def test_small_price_rise_is_not_a_bubble(cfg):
+    # Sama LPPLS-muoto mutta pieni amplitudi: nousu 2 vuodessa jää alle 100 %
+    s = synthetic_bubble(B=-0.2, noise=0.002)
+    sr = scan_series("SMALL", s, "2020-06-01", cfg)
+    assert sr.runup < cfg.min_runup
+    assert not sr.detected

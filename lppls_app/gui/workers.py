@@ -41,8 +41,12 @@ class ScanWorker(QThread):
                     self.progress.emit(i * 100 + done * 100 // total, n * 100,
                                        f"Sovitetaan {ticker} ({done}/{total})")
 
-                self.result.emit(scan_series(ticker, series, self.as_of, self.cfg,
-                                             executor, on_fit))
+                try:
+                    sr = scan_series(ticker, series, self.as_of, self.cfg, executor, on_fit)
+                except Exception as e:  # näytetään taulukossa, ei katkaista koko skannausta
+                    self.failed.emit(ticker, f"sovitus epäonnistui ({type(e).__name__}: {e})")
+                    continue
+                self.result.emit(sr)
         finally:
             executor.shutdown(cancel_futures=True)
             storage.close()
