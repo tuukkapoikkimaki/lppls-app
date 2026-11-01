@@ -201,3 +201,10 @@ ei antanut sille historiaa. Ehdokaslista on koottu tunnetuista kolikoista, joten
 kolikoita voi puuttua. Skeemaversio 5 lisää kryptot olemassa olevaan kantaan.
 Uusilla kolikoilla historia on lyhyempi (esim. Hyperliquid 701 päivää), jolloin osa pisimmistä
 ikkunoista jää pois. Testiskannauksessa 31.10.2026 yksikään 40 kryptosta ei ollut kupla tai "lähellä".
+
+## Teemat, osakkeet, sektorit, asuntomarkkina ja maat (1.11.2026)
+40 kuplille altista tunnusta (THEME_WATCHLIST, skeemaversio 6): 17 teemarahastoa, 10 momentum-osaketta,
+6 S&P 500 -sektoria, 3 asuntomarkkina-ETF:ää ja 4 maa-ETF:ää. Valuutat ja suomalaiset osakkeet
+jätettiin käyttäjän pyynnöstä pois. Testiskannauksessa 31.10.2026 kupliksi luokittuivat XLK
+(teknologiasektori, +101 %, CI 38 %) ja EPOL (Puola, +125 %, CI 12 %). Tilassa "lähellä"
+olivat SMH, AIQ, TSM, XLE ja KWEB (antikupla).

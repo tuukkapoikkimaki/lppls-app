@@ -195,7 +195,56 @@ CRYPTO_WATCHLIST = [
     ("JUP29210-USD", "Jupiter"),
 ]
 
-DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + CRYPTO_WATCHLIST
+# Kuplille alttiit teemat, osakkeet, sektorit, asuntomarkkina ja maat (tarkistettu Yahoosta 1.11.2026)
+THEME_WATCHLIST = [
+    # Teemarahastot
+    ("SMH", "Puolijohteet (VanEck)"),
+    ("SOXX", "Puolijohteet (iShares)"),
+    ("BOTZ", "Robotiikka ja tekoäly"),
+    ("AIQ", "Tekoäly ja teknologia"),
+    ("ARKK", "ARK Innovation"),
+    ("URA", "Uraani"),
+    ("URNM", "Uraanikaivosyhtiöt"),
+    ("ICLN", "Puhdas energia"),
+    ("TAN", "Aurinkoenergia"),
+    ("LIT", "Litium ja akut"),
+    ("KWEB", "Kiinan internetyhtiöt"),
+    ("BITQ", "Kryptoalan yhtiöt"),
+    ("WGMI", "Bitcoin-louhijat"),
+    ("GDX", "Kultakaivosyhtiöt"),
+    ("GDXJ", "Pienet kultakaivosyhtiöt"),
+    ("ITA", "Puolustus ja ilmailu (iShares)"),
+    ("XAR", "Puolustus ja ilmailu (SPDR)"),
+    # Momentum-osakkeet
+    ("NVDA", "NVIDIA"),
+    ("AMD", "AMD"),
+    ("AVGO", "Broadcom"),
+    ("ARM", "Arm Holdings"),
+    ("SMCI", "Super Micro Computer"),
+    ("TSM", "TSMC"),
+    ("TSLA", "Tesla"),
+    ("PLTR", "Palantir"),
+    ("MSTR", "Strategy (MicroStrategy)"),
+    ("COIN", "Coinbase"),
+    # S&P 500 -sektorit
+    ("XLK", "Sektori: teknologia"),
+    ("XLE", "Sektori: energia"),
+    ("XLF", "Sektori: rahoitus"),
+    ("XLU", "Sektori: sähkö ja vesi"),
+    ("XLV", "Sektori: terveys"),
+    ("XLY", "Sektori: kulutustavarat"),
+    # Asuntomarkkina
+    ("ITB", "Asuntorakentajat (iShares)"),
+    ("XHB", "Asuntorakentajat (SPDR)"),
+    ("VNQ", "Kiinteistösijoitusyhtiöt (REIT)"),
+    # Maat (ETF)
+    ("EWZ", "Brasilia (ETF)"),
+    ("VNM", "Vietnam (ETF)"),
+    ("ARGT", "Argentiina (ETF)"),
+    ("EPOL", "Puola (ETF)"),
+]
+
+DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + CRYPTO_WATCHLIST + THEME_WATCHLIST
 
 # Historialliset testikuplat (as-of-pikavalinnat)
 TEST_PRESETS = [

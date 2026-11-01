@@ -160,7 +160,7 @@ def story():
         "Sornette 2010). Jos sormenjälki löytyy hintasarjasta ajoissa, kuplan loppumisajankohtaa "
         "voidaan arvioida etukäteen."),
       P("LPPLS-kuplaskanneri soveltaa tätä ajatusta järjestelmällisesti. Sovellus käy läpi "
-        "seurantalistan (oletuksena 75 osakeindeksiä, 39 raaka-ainefutuuria ja 40 suurinta kryptovaluuttaa), sovittaa "
+        "seurantalistan (oletuksena 75 osakeindeksiä, 39 raaka-ainefutuuria, 40 suurinta kryptovaluuttaa sekä 40 teemarahastoa, osaketta ja sektoria), sovittaa "
         "mallin jokaiseen sarjaan, luokittelee tuloksen ja tallentaa havaitut kuplat. Myöhemmin "
         "se hakee uutta dataa ja tarkistaa, toteutuiko ennuste. Luvussa 2 esitellään mallin teoria, "
         "luvussa 3 kuvataan, miten hintadataa käytetään parametrien estimointiin, luvussa 4 "

@@ -94,7 +94,8 @@ def test_cache_expires_for_recent_range(store):
 def test_upgrade_adds_indices_and_keeps_user_choices(tmp_path):
     import sqlite3
 
-    from lppls_app.config import COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, INDEX_WATCHLIST
+    from lppls_app.config import (COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, INDEX_WATCHLIST,
+                                  THEME_WATCHLIST)
 
     db = tmp_path / "old.db"
     s = Storage(db, seed_watchlist=False)
@@ -111,16 +112,17 @@ def test_upgrade_adds_indices_and_keeps_user_choices(tmp_path):
     tickers = [r["ticker"] for r in s.list_watchlist()]
     assert "NVDA" in tickers
     assert "^GSPC" not in tickers
+    # −^GSPC; NVDA on myös THEME_WATCHLISTissa, joten se ei tuo ylimääräistä
     assert len(tickers) == (len(INDEX_WATCHLIST) + len(COMMODITY_WATCHLIST)
-                            + len(CRYPTO_WATCHLIST))  # −^GSPC +NVDA
+                            + len(CRYPTO_WATCHLIST) + len(THEME_WATCHLIST) - 1)
     assert "CL=F" in tickers
-    assert tickers[0] == "^DJI" and tickers[-1] == "NVDA"
+    assert tickers[0] == "^DJI" and tickers[-1] == "EPOL"
 
 
 def test_upgrade_from_v3_adds_only_commodities(tmp_path):
     import sqlite3
 
-    from lppls_app.config import COMMODITY_WATCHLIST, CRYPTO_WATCHLIST
+    from lppls_app.config import COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, THEME_WATCHLIST
 
     db = tmp_path / "v3.db"
     s = Storage(db, seed_watchlist=False)
@@ -134,6 +136,7 @@ def test_upgrade_from_v3_adds_only_commodities(tmp_path):
 
     tickers = [r["ticker"] for r in Storage(db).list_watchlist()]
     assert "^DJI" not in tickers  # indeksejä ei lisätä uudelleen v3-kantaan
-    # ^GSPC + raaka-aineet (GC=F jo oli) + kryptot
-    assert len(tickers) == 1 + len(COMMODITY_WATCHLIST) + len(CRYPTO_WATCHLIST)
+    # ^GSPC + raaka-aineet (GC=F jo oli) + kryptot + teemat
+    assert len(tickers) == (1 + len(COMMODITY_WATCHLIST) + len(CRYPTO_WATCHLIST)
+                            + len(THEME_WATCHLIST))
     assert "SOL-USD" in tickers
