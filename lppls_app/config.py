@@ -150,10 +150,52 @@ COMMODITY_WATCHLIST = [
     ("GD=F", "S&P GSCI -futuuri"),
 ]
 
-DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + [
+# 40 suurinta kryptovaluuttaa markkina-arvon mukaan (Yahoo Finance 1.11.2026), ilman
+# stablecoineja (USDT, USDC …), joiden hinta on sidottu dollariin. TON puuttuu: Yahoo ei anna historiaa.
+CRYPTO_WATCHLIST = [
     ("BTC-USD", "Bitcoin"),
     ("ETH-USD", "Ethereum"),
+    ("BNB-USD", "BNB"),
+    ("XRP-USD", "XRP"),
+    ("SOL-USD", "Solana"),
+    ("TRX-USD", "TRON"),
+    ("HYPE32196-USD", "Hyperliquid"),
+    ("ZEC-USD", "Zcash"),
+    ("DOGE-USD", "Dogecoin"),
+    ("XMR-USD", "Monero"),
+    ("LINK-USD", "Chainlink"),
+    ("LEO-USD", "UNUS SED LEO (LEO)"),
+    ("ADA-USD", "Cardano"),
+    ("XLM-USD", "Stellar"),
+    ("NEAR-USD", "NEAR Protocol"),
+    ("BCH-USD", "Bitcoin Cash"),
+    ("UNI7083-USD", "Uniswap"),
+    ("LTC-USD", "Litecoin"),
+    ("AVAX-USD", "Avalanche"),
+    ("SUI20947-USD", "Sui"),
+    ("HBAR-USD", "Hedera"),
+    ("SHIB-USD", "Shiba Inu"),
+    ("TAO22974-USD", "Bittensor"),
+    ("CRO-USD", "Cronos"),
+    ("ENA-USD", "Ethena"),
+    ("QNT-USD", "Quant"),
+    ("OKB-USD", "OKB"),
+    ("AAVE-USD", "Aave"),
+    ("PEPE24478-USD", "Pepe"),
+    ("ONDO-USD", "Ondo"),
+    ("DOT-USD", "Polkadot"),
+    ("MNT27075-USD", "Mantle"),
+    ("WLD-USD", "Worldcoin"),
+    ("ICP-USD", "Internet Computer"),
+    ("ETC-USD", "Ethereum Classic"),
+    ("ARB11841-USD", "Arbitrum"),
+    ("POL28321-USD", "Polygon (POL)"),
+    ("KAS-USD", "Kaspa"),
+    ("ALGO-USD", "Algorand"),
+    ("JUP29210-USD", "Jupiter"),
 ]
+
+DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + CRYPTO_WATCHLIST
 
 # Historialliset testikuplat (as-of-pikavalinnat)
 TEST_PRESETS = [

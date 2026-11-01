@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from .config import COMMODITY_WATCHLIST, DEFAULT_WATCHLIST, INDEX_WATCHLIST
+from .config import COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, DEFAULT_WATCHLIST, INDEX_WATCHLIST
 from .model import from_years
 from .scanner import ScanResult
 
-SCHEMA_VERSION = 4  # 2: 75 osakeindeksiä, 3: hinnanmuutos (move), 4: 39 raaka-ainetta
+SCHEMA_VERSION = 5  # 2: 75 osakeindeksiä, 3: hinnanmuutos (move), 4: 39 raaka-ainetta, 5: 40 kryptoa
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -66,7 +66,8 @@ class Storage:
                 seed = DEFAULT_WATCHLIST
             else:
                 seed = (INDEX_WATCHLIST if version < 2 else []) + \
-                       (COMMODITY_WATCHLIST if version < 4 else [])
+                       (COMMODITY_WATCHLIST if version < 4 else []) + \
+                       (CRYPTO_WATCHLIST if version < 5 else [])
             self.con.executemany(
                 "INSERT INTO watchlist(ticker, name, added, active) VALUES (?,?,?,1) "
                 "ON CONFLICT(ticker) DO NOTHING",

@@ -193,3 +193,11 @@ raaka-aineet olemassa olevaan kantaan.
 Testiskannaus 30.10.2026: lämmitysöljy (HO=F) luokittui kuplaksi (+143 %, CI 21 %) ja
 kuumavalssattu teräs (HRC=F) tilaan "lähellä". Kaakaon 2024 kupla (as-of 1.4.2024, nousu +360 %)
 jäi tunnistamatta (CI 4 %): hinnannousuehto täyttyi, mutta LPPLS-suodattimen läpäisi vain yksi ikkuna.
+
+## Kryptovaluutat seurantalistalle (1.11.2026)
+40 suurinta kryptoa Yahoo Financen markkina-arvon mukaan noin 70 ehdokkaasta. Stablecoinit
+(USDT, USDC …) jätettiin pois, koska niiden hinta on sidottu dollariin. TON puuttuu, koska Yahoo
+ei antanut sille historiaa. Ehdokaslista on koottu tunnetuista kolikoista, joten aivan uusia
+kolikoita voi puuttua. Skeemaversio 5 lisää kryptot olemassa olevaan kantaan.
+Uusilla kolikoilla historia on lyhyempi (esim. Hyperliquid 701 päivää), jolloin osa pisimmistä
+ikkunoista jää pois. Testiskannauksessa 31.10.2026 yksikään 40 kryptosta ei ollut kupla tai "lähellä".

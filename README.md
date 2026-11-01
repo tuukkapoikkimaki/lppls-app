@@ -24,12 +24,13 @@ Asennuksen jälkeen sovelluksen voi käynnistää myös komennolla `.venv/bin/lp
 **Skanneri**
 1. Seurantalistalla on valmiina 75 yleisintä osakeindeksiä eri puolilta maailmaa,
    39 raaka-ainetta (futuurit: energia, metallit, viljat, pehmeät raaka-aineet, karja ja
-   maitotuotteet sekä S&P GSCI -indeksi) ja BTC, ETH. Listaa voi rajata hakukentällä
-   (esim. "intia", "vehnä", "=F" näyttää kaikki futuurit). Omia
+   maitotuotteet sekä S&P GSCI -indeksi) ja 40 suurinta kryptovaluuttaa (ilman
+   stablecoineja). Listaa voi rajata hakukentällä (esim. "intia", "vehnä"; "=F" näyttää
+   futuurit ja "-USD" kryptot). Omia
    tunnuksia lisätään Yahoo Finance -tunnuksilla, esim. `NVDA`.
 2. *Skannaa kaikki* skannaa listassa näkyvät tunnukset (hakukenttä rajaa joukkoa), ja
    *Skannaa valitut* vain valitut. Yksi tunnus vie noin 9 s (4 ytimellä), joten koko
-   lista (116 tunnusta) vie noin 17 minuuttia.
+   lista (154 tunnusta) vie noin 23 minuuttia.
 
    Raaka-aineiden hinnat ovat jatkuvia lähimmän sopimuksen futuurisarjoja. Sopimuksen
    vaihtuessa (roll) sarjaan voi tulla pieni hyppy, joka voi häiritä sovitusta.
