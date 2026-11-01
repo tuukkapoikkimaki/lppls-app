@@ -160,11 +160,20 @@ class Storage:
         self.con.commit()
         return bubble_id
 
+    # Havaitsemispäivän conf+/conf− tulevat kuplan skannauksesta; ilman skannausriviä
+    # käytetään kuplan omaa confidencea sen suunnan mukaan
+    _BUBBLE_SELECT = """
+        SELECT b.*,
+               COALESCE(s.conf_pos, CASE WHEN b.sign = 'neg' THEN 0 ELSE b.confidence END) AS conf_pos,
+               COALESCE(s.conf_neg, CASE WHEN b.sign = 'neg' THEN b.confidence ELSE 0 END) AS conf_neg
+        FROM bubbles b LEFT JOIN scans s ON s.id = b.scan_id"""
+
     def list_bubbles(self) -> list[sqlite3.Row]:
-        return self.con.execute("SELECT * FROM bubbles ORDER BY detected_as_of DESC, id DESC").fetchall()
+        return self.con.execute(
+            self._BUBBLE_SELECT + " ORDER BY b.detected_as_of DESC, b.id DESC").fetchall()
 
     def get_bubble(self, bubble_id: int) -> sqlite3.Row | None:
-        return self.con.execute("SELECT * FROM bubbles WHERE id=?", (bubble_id,)).fetchone()
+        return self.con.execute(self._BUBBLE_SELECT + " WHERE b.id=?", (bubble_id,)).fetchone()
 
     def bubble_prices(self, bubble_id: int) -> pd.Series:
         rows = self.con.execute(

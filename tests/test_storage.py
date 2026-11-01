@@ -41,6 +41,10 @@ def test_save_and_load_bubble(store, detected):
     bid = store.save_bubble(detected, scan_id, is_test=True)
     b = store.get_bubble(bid)
     assert b["ticker"] == "SYN" and b["status"] == "odottaa" and b["is_test"] == 1
+    # havaitsemispäivän conf-arvot tulevat skannauksesta
+    assert b["conf_pos"] == pytest.approx(detected.conf_pos)
+    assert b["conf_neg"] == pytest.approx(detected.conf_neg)
+    assert store.list_bubbles()[0]["conf_pos"] == pytest.approx(detected.conf_pos)
     prices = store.bubble_prices(bid)
     assert len(prices) == len(detected.series)
     assert prices.index[-1] == detected.series.index[-1]

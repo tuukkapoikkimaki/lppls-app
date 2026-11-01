@@ -51,6 +51,8 @@ Testikuplat merkitään erikseen.
     (antikuplalla pohja ja nousu)
   - **ei toteutunut**: ennustettu tc-väli (vähintään ±30 pv) ohitettiin ilman käännettä
   - **odottaa**: väli on vielä kesken
+- *Conf +* ja *Conf −* ovat luottamusindikaattorit havaitsemispäivänä, eli niiden ikkunoiden
+  osuus, jotka näkivät nousukuplan (+) tai antikuplan (−).
 - *Ero (pv)* kertoo, kuinka paljon todellinen käänne poikkesi ennustetusta tc:stä.
 - Kuvaajassa havaintohetken data on sinisenä, toteuma oranssina, sovite mustana ja tc punaisena.
 

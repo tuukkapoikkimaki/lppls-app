@@ -15,7 +15,7 @@ from ..tracker import HIT, MISS, PENDING
 from .common import ChartPanel
 from .workers import UpdateWorker
 
-COLUMNS = ["#", "Tunnus", "Havaittu", "Muutos 2 v", "Ennustettu tc", "tc-väli", "Todellinen käänne",
+COLUMNS = ["#", "Tunnus", "Havaittu", "Conf +", "Conf −", "Muutos 2 v", "Ennustettu tc", "tc-väli", "Todellinen käänne",
            "Ero (pv)", "Muutos", "Tila", "Laji", "Seuranta", "Päivitetty"]
 STATUS_COLOR = {HIT: QColor(210, 240, 210), MISS: QColor(240, 215, 215),
                 PENDING: QColor(255, 245, 205)}
@@ -116,6 +116,7 @@ class BubblesTab(QWidget):
             move = b["max_drawdown"]
             values = [
                 str(b["id"]), b["ticker"], b["detected_as_of"],
+                f"{b['conf_pos']:.0%}", f"{b['conf_neg']:.0%}",
                 f"{b['move']:+.0%}" if b["move"] is not None else "–", b["tc"],
                 f"{b['tc_p10']} … {b['tc_p90']}",
                 f"{peak:%Y-%m-%d}" if peak is not None else "–",
