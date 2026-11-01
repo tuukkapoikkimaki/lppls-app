@@ -12,20 +12,21 @@ FOLLOW_COLOR = "#ff7f0e"
 TC_COLOR = "#d62728"
 
 
-def _style(ax: Axes, title: str):
+def _style(ax: Axes, title: str, ylabel: str = "ln P"):
     ax.set_title(title, fontsize=13)
     ax.set_xlabel("Päivämäärä")
-    ax.set_ylabel("ln P")
+    ax.set_ylabel(ylabel)
     ax.grid(True, linestyle=":", alpha=0.7)
     ax.legend(loc="upper center", ncol=4, frameon=True, fontsize=9,
               bbox_to_anchor=(0.5, 1.0))
 
 
-def _fit_curve(ax: Axes, fit: LPPLSResult, end_years: float | None = None):
+def _fit_curve(ax: Axes, fit: LPPLSResult, end_years: float | None = None, log: bool = True):
     end = min(end_years if end_years is not None else fit.tc, fit.tc - 1e-4)
     t = np.linspace(fit.t1, end, 600)
     dates = pd.DatetimeIndex([from_years(x) for x in t])
-    ax.plot(dates, fit.predict(t), color="black", linewidth=1.6, label="LPPLS-sovite")
+    y = fit.predict(t)
+    ax.plot(dates, y if log else np.exp(y), color="black", linewidth=1.6, label="LPPLS-sovite")
 
 
 def _tc_band(ax: Axes, tc, p10, p90):
@@ -55,31 +56,39 @@ def draw_scan(ax: Axes, sr) -> None:
         ax.text(0.5, 0.02, _sign_text(sr.sign), transform=ax.transAxes, ha="center", fontsize=10)
 
 
-def draw_tracked(ax: Axes, bubble, snapshot: pd.Series, follow: pd.Series) -> None:
-    """Tallennettu kupla: jäädytetty ennuste vs. havainnon jälkeinen toteuma."""
+def draw_tracked(ax: Axes, bubble, snapshot: pd.Series, follow: pd.Series,
+                 log: bool = True) -> None:
+    """Tallennettu kupla: jäädytetty ennuste vs. havainnon jälkeinen toteuma.
+
+    log=False piirtää hinnan sellaisenaan (ilman logaritmia) ja koko seuratun
+    kehityksen viimeisimpään päivään asti.
+    """
     ax.clear()
+    f = np.log if log else np.asarray
     fit = LPPLSResult(
         tc=bubble["tc_years"], m=bubble["m"], omega=bubble["omega"], A=bubble["A"],
         B=bubble["B"], C1=bubble["C1"], C2=bubble["C2"], rmse=0.0, r2=bubble["r2"],
         t1=float(to_years(bubble["window_start"])), t2=float(to_years(bubble["detected_as_of"])))
     start = pd.Timestamp(bubble["window_start"]) - pd.Timedelta(days=30)
     snap = snapshot[snapshot.index >= start]
-    ax.scatter(snap.index, np.log(snap.to_numpy()), s=6, color=PRICE_COLOR, label="Log-hinta (havainto)")
-    # Toteumaa näytetään puoli vuotta ennustevälin yli, jotta käänne erottuu
-    view_end = pd.Timestamp(bubble["tc_p90"] or bubble["tc"]) + pd.Timedelta(days=180)
-    follow = follow[follow.index <= view_end]
+    ax.scatter(snap.index, f(snap.to_numpy()), s=6, color=PRICE_COLOR,
+               label="Log-hinta (havainto)" if log else "Hinta (havainto)")
+    if log:
+        # Toteumaa näytetään puoli vuotta ennustevälin yli, jotta käänne erottuu
+        view_end = pd.Timestamp(bubble["tc_p90"] or bubble["tc"]) + pd.Timedelta(days=180)
+        follow = follow[follow.index <= view_end]
     if not follow.empty:
-        ax.scatter(follow.index, np.log(follow.to_numpy()), s=6, color=FOLLOW_COLOR,
+        ax.scatter(follow.index, f(follow.to_numpy()), s=6, color=FOLLOW_COLOR,
                    label="Toteuma")
-    _fit_curve(ax, fit)
+    _fit_curve(ax, fit, log=log)
     _tc_band(ax, pd.Timestamp(bubble["tc"]),
              pd.Timestamp(bubble["tc_p10"]) if bubble["tc_p10"] else None,
              pd.Timestamp(bubble["tc_p90"]) if bubble["tc_p90"] else None)
     ax.axvline(pd.Timestamp(bubble["detected_as_of"]), color="grey", linewidth=1, label="havaittu")
     if bubble["actual_peak_date"]:
-        ax.plot(pd.Timestamp(bubble["actual_peak_date"]), np.log(bubble["actual_peak_price"]),
+        ax.plot(pd.Timestamp(bubble["actual_peak_date"]), f(bubble["actual_peak_price"]),
                 marker="v" if bubble["sign"] != "neg" else "^", color="black", markersize=9,
                 linestyle="none", label="toteutunut käänne")
     test = " (testi)" if bubble["is_test"] else ""
-    _style(ax, f"{bubble['ticker']}{test} – {bubble['status']}")
+    _style(ax, f"{bubble['ticker']}{test} – {bubble['status']}", "ln P" if log else "Hinta")
     ax.text(0.5, 0.02, _sign_text(bubble["sign"]), transform=ax.transAxes, ha="center", fontsize=10)

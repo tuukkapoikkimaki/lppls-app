@@ -151,9 +151,12 @@ class BubblesTab(QWidget):
             return
         snap = self.storage.bubble_prices(b["id"])
         follow = self.storage.tracked_prices(b["ticker"], after=b["detected_as_of"])
-        draw_tracked(self.chart.ax, b, snap, follow)
         safe = b["ticker"].replace("^", "").replace("=", "")
-        self.chart.redraw(f"{safe}_tc-{b['tc']}.png")
+        # Sama näkymä säilyy, kun vaihdetaan kuplasta toiseen
+        self.chart.set_pages([
+            ("log-hinta", lambda ax: draw_tracked(ax, b, snap, follow)),
+            ("hinta ilman logaritmia", lambda ax: draw_tracked(ax, b, snap, follow, log=False)),
+        ], f"{safe}_tc-{b['tc']}.png", page=self.chart.page)
         self.stop_track_btn.setText("Lopeta seuranta" if b["tracking"] else "Jatka seurantaa")
 
     # --- toiminnot ---

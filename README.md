@@ -55,6 +55,8 @@ Testikuplat merkitään erikseen.
   osuus, jotka näkivät nousukuplan (+) tai antikuplan (−).
 - *Ero (pv)* kertoo, kuinka paljon todellinen käänne poikkesi ennustetusta tc:stä.
 - Kuvaajassa havaintohetken data on sinisenä, toteuma oranssina, sovite mustana ja tc punaisena.
+- Työkalurivin nuolet ← / → vaihtavat näkymää: 1) log-hinta, 2) hinta ilman logaritmia
+  koko seuratulla jaksolla. Jos olet zoomannut, nuolet kulkevat ensin zoomaushistoriaa.
 
 ## Miten havainto toimii
 
