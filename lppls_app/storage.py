@@ -12,8 +12,8 @@ from .config import (COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, DEFAULT_WATCHLIST, I
 from .model import from_years
 from .scanner import ScanResult
 
-SCHEMA_VERSION = 6  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
-                    # 6: 40 teemaa/osaketta/sektoria
+SCHEMA_VERSION = 7  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
+                    # 6: 40 teemaa/osaketta/sektoria, 7: kvanttilaskenta (QTUM)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -70,7 +70,7 @@ class Storage:
                 seed = (INDEX_WATCHLIST if version < 2 else []) + \
                        (COMMODITY_WATCHLIST if version < 4 else []) + \
                        (CRYPTO_WATCHLIST if version < 5 else []) + \
-                       (THEME_WATCHLIST if version < 6 else [])
+                       (THEME_WATCHLIST if version < 7 else [])  # v7: +QTUM; muut ohitetaan
             self.con.executemany(
                 "INSERT INTO watchlist(ticker, name, added, active) VALUES (?,?,?,1) "
                 "ON CONFLICT(ticker) DO NOTHING",

@@ -215,6 +215,7 @@ THEME_WATCHLIST = [
     ("GDXJ", "Pienet kultakaivosyhtiöt"),
     ("ITA", "Puolustus ja ilmailu (iShares)"),
     ("XAR", "Puolustus ja ilmailu (SPDR)"),
+    ("QTUM", "Kvanttilaskenta (Defiance Quantum ETF)"),
     # Momentum-osakkeet
     ("NVDA", "NVIDIA"),
     ("AMD", "AMD"),

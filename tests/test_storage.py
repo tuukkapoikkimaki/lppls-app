@@ -144,3 +144,21 @@ def test_upgrade_from_v3_adds_only_commodities(tmp_path):
     assert len(tickers) == (1 + len(COMMODITY_WATCHLIST) + len(CRYPTO_WATCHLIST)
                             + len(THEME_WATCHLIST))
     assert "SOL-USD" in tickers
+
+
+def test_upgrade_from_v6_adds_quantum_etf(tmp_path):
+    import sqlite3
+
+    db = tmp_path / "v6.db"
+    s = Storage(db)
+    s.con.execute("DELETE FROM watchlist WHERE ticker='QTUM'")
+    s.remove_ticker("TSLA")  # käyttäjä poisti
+    s.con.execute("PRAGMA user_version=6")
+    s.con.commit()
+    before = len(s.list_watchlist())
+    s.close()
+
+    tickers = [r["ticker"] for r in Storage(db).list_watchlist()]
+    assert "QTUM" in tickers
+    assert "TSLA" not in tickers
+    assert len(tickers) == before + 1
