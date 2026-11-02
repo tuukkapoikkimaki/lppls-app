@@ -8,12 +8,13 @@
 \usepackage[finnish]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-\usepackage[a4paper,left=2.3cm,right=2.3cm,top=2.0cm,bottom=2.0cm]{geometry}
+\usepackage[a4paper,left=2.0cm,right=2.0cm,top=1.9cm,bottom=1.9cm]{geometry}
 \usepackage{amsmath,amssymb,bm}
 \usepackage{graphicx}
 \usepackage{booktabs,tabularx,array}
 \usepackage[font=small,labelfont=bf,labelsep=period]{caption}
 \usepackage{fancyhdr}
+\usepackage[compact]{titlesec}
 \usepackage{xcolor}
 \usepackage[authoryear,round]{natbib}
 \usepackage[hidelinks,pdfusetitle]{hyperref}
@@ -25,7 +26,11 @@
 \addto\captionsfinnish{\renewcommand{\refname}{Lähteet}}
 \definecolor{navy}{HTML}{1F2A44}
 \captionsetup[table]{position=below}
-\renewcommand{\arraystretch}{1.15}
+\renewcommand{\arraystretch}{1.1}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\captionsetup{skip=4pt}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -63,20 +68,23 @@ eksponentiaalisesti. Kasvu kiihtyy kohti kriittistä hetkeä~$\tc$, jolloin roma
 todennäköisyys on suurimmillaan, ja kiihtyvään trendiin liittyy log-periodisia värähtelyjä,
 jotka tihenevät $\tc$:tä lähestyttäessä. Sovellus hakee jokaiselle seurattavalle tunnukselle
 noin neljän vuoden päivittäiset päätöskurssit Yahoo Financesta ja sovittaa mallin hintojen
-logaritmeihin 24 eri pituisessa aikaikkunassa (puolesta vuodesta neljään vuoteen), jotka kaikki
+logaritmeihin kahdella aikaskaalalla: pitkä menetelmä käyttää 24 ikkunaa (puolesta vuodesta
+neljään vuoteen) ja lyhyt menetelmä 52 ikkunaa (kuudesta viikosta vuoteen). Kaikki ikkunat
 päättyvät tarkastelupäivään. Sovitus tehdään Filimonovin ja Sornetten menetelmällä: neljä
 lineaarista parametria ratkaistaan suoraan pienimmän neliösumman menetelmällä, ja vain kolme
 epälineaarista parametria haetaan numeerisesti. Jokainen sovitus tarkistetaan kirjallisuudesta
 poimituilla ehdoilla. Niiden ikkunoiden osuus, jotka läpäisevät ehdot ja ennustavat $\tc$:n
-puolen vuoden sisään, muodostaa luottamusindikaattorin. Tilanne luokitellaan kuplaksi, kun
-luottamusindikaattori on vähintään 10\,\% ja hinta on lisäksi vähintään kaksinkertaistunut
-kahdessa vuodessa. Jälkimmäinen ehto perustuu Greenwoodin, Shleiferin ja Youn havaintoon, että
+puolen vuoden sisään, muodostaa luottamusindikaattorin (pitkälle $C_P$, lyhyelle $C_L$).
+Tilanne luokitellaan kuplaksi, kun luottamusindikaattori on vähintään 10\,\% ja hinta on
+lisäksi vähintään kaksinkertaistunut kahdessa vuodessa (lyhyessä menetelmässä noussut
+vähintään 50\,\% vuodessa). Jälkimmäinen ehto perustuu Greenwoodin, Shleiferin ja Youn havaintoon, että
 näin suuri nousu nostaa romahduksen todennäköisyyden yli puoleen. Havaitut kuplat tallennetaan
-tietokantaan, ja sovellus seuraa, toteutuiko ennustettu käänne: kupla katsotaan toteutuneeksi,
+tietokantaan, jokaisesta skannauksesta kertyy $C_P$- ja $C_L$-aikasarja, ja sovellus seuraa, toteutuiko ennustettu käänne: kupla katsotaan toteutuneeksi,
 jos ennustetun hetken lähellä tulee huippu ja sitä seuraa vähintään 15\,\%:n pudotus. Ehtoja
 testattiin historiallisilla kuplilla, kuten Bitcoinin vuoden 2017, Shanghain pörssin vuosien
-2007 ja 2015 sekä Nasdaqin vuoden 2000 kuplilla, ja ne tunnistivat kuusi kahdeksasta.
-Kriittisen hetken arvio osui 0--4 viikon päähän todellisesta huipusta. Menetelmä on tutkimuksen
+2007 ja 2015 sekä Nasdaqin vuoden 2000 kuplilla: pitkä menetelmä tunnisti kuusi kahdeksasta,
+ja kriittisen hetken arvio osui 0--4 viikon päähän todellisesta huipusta. Lyhyt menetelmä
+varoitti osassa tapauksista jo 4--6 viikkoa ennen huippua. Menetelmä on tutkimuksen
 ja opiskelun väline, ei sijoitussuositus.
 \end{abstract}
 
@@ -94,9 +102,8 @@ LPPLS-kuplaskanneri soveltaa tätä ajatusta järjestelmällisesti. Sovellus kä
 seurantalistan (oletuksena 75 osakeindeksiä, 39 raaka-ainefutuuria, 40 suurinta kryptovaluuttaa
 sekä 41 teemarahastoa, osaketta ja sektoria), sovittaa mallin jokaiseen sarjaan, luokittelee
 tuloksen ja tallentaa havaitut kuplat. Myöhemmin se hakee uutta dataa ja tarkistaa, toteutuiko
-ennuste. Luvussa~\ref{sec:teoria} esitellään mallin teoria, luvussa~\ref{sec:data} kuvataan,
-miten hintadataa käytetään parametrien estimointiin, luvussa~\ref{sec:ehdot} käydään läpi
-kuplan ehdot, ja luvussa~\ref{sec:kalibrointi} arvioidaan menetelmän osuvuutta ja rajoituksia.
+ennuste. Luvut~\ref{sec:teoria}--\ref{sec:kalibrointi} käsittelevät mallin teoriaa, estimointia,
+kuplan ehtoja sekä kalibrointia ja rajoituksia.
 
 % ---------------------------------------------------------------------------
 \section{Mallin teoria}\label{sec:teoria}
@@ -132,27 +139,94 @@ LPPLS-yhtälö
   \qquad t<\tc .
 \end{equation}
 
-\subsection{Parametrien tulkinta}
+\subsection{Yhtälön (4) tulkinta}\label{sec:tulkinta}
 
-$\bm{\tc}$ on kriittinen hetki eli kuplan todennäköisin loppumisajankohta. Se ei ole varma
-romahduspäivä: \citet{johansen2010} arvioivat, että noin kolmasosa kuplista päättyy pehmeään
-laskuun ilman romahdusta. $\bm{m}\in(0,1)$ kuvaa kiihtyvyyttä. Log-hinnan kasvuvauhti on
-$-mB(\tc-t)^{m-1}$, ja se kasvaa rajatta, kun $t\to\tc$. Itse hinta pysyy silti äärellisenä, ja
-tätä kutsutaan äärellisen ajan singulariteetiksi. $\bm{B}<0$ tarkoittaa kiihtyvää nousua eli
-positiivista kuplaa, ja $B>0$ kiihtyvää laskua eli antikuplaa. $\bm{\omega}$ on värähtelyjen
-log-taajuus: peräkkäisten värähtelyjen etäisyydet $\tc$:stä pienenevät suhteessa
-$\lambda = e^{2\pi/\omega}$, joten esimerkiksi arvolla $\omega = 9$ jokainen jakso on noin
-puolet edellisestä. $\bm{C}$ ja $\bm{\phi}$ ovat värähtelyn amplitudi ja vaihe, ja $\bm{A}$ on
-log-hinta hetkellä~$\tc$. Kuva~\ref{fig:malli} havainnollistaa mallin osia.
+Yhtälö~\eqref{eq:lppls} koostuu kolmesta osasta: tasosta $A$, potenssilakitrendistä
+$B(\tc-t)^m$ ja sen päälle tulevasta log-periodisesta korjauksesta. Jokaisella osalla on oma
+taloudellinen tulkintansa, joka käydään läpi seuraavaksi.
+
+\paragraph{Mistä yhtälö syntyy.} Romahdusta odotellessa log-hinnan odotettu muutos on
+yhtälön~\eqref{eq:arb} mukaan $d\ln p \approx \mu\,dt = \kappa\,h(t)\,dt$. Integroimalla
+riskifunktion~\eqref{eq:hazard} trenditermi saadaan
+\begin{equation}\label{eq:integral}
+  \ln p(t) - \ln p(t_0) = \kappa\!\int_{t_0}^{t}\! B'(\tc-s)^{m-1}\,ds
+  = -\frac{\kappa B'}{m}\Bigl[(\tc-t)^m - (\tc-t_0)^m\Bigr],
+\end{equation}
+josta nähdään yhtälön~\eqref{eq:lppls} parametrien yhteys riskiin: $B = -\kappa B'/m$. Kasvava
+romahdusriski ($B'>0$) antaa siis negatiivisen $B$:n eli nousevan hinnan. Hinta nousee, koska
+riski kasvaa, eikä toisin päin: kuplassa sijoittajat vaativat korvausta yhä todennäköisemmästä
+romahduksesta. Vakio $A$ kokoaa integroinnin vakiot, ja se on log-hinnan raja-arvo, kun
+$t\to\tc$, eli $e^{A}$ on hinta, johon kupla päätyisi, jos se kestäisi kriittiseen hetkeen asti.
+
+\paragraph{Supereksponentiaalinen kasvu ja $m$.} Trendin kasvuvauhti on
+\begin{equation}\label{eq:rate}
+  r(t) = \frac{d}{dt}\bigl[B(\tc-t)^m\bigr] = -mB\,(\tc-t)^{m-1} = m|B|\,(\tc-t)^{m-1}\quad (B<0).
+\end{equation}
+Tavallisessa eksponentiaalisessa kasvussa $r$ on vakio ($m=1$). Kun $0<m<1$, eksponentti
+$m-1$ on negatiivinen, joten kasvuvauhti itse kasvaa ja lähestyy ääretöntä, kun $t\to\tc$:
+hinta kasvaa nopeammin kuin eksponentiaalisesti. Tästä tulee nimen \enquote{singulariteetti}:
+derivaatta räjähtää äärellisessä ajassa, vaikka hinta $e^{A}$ pysyy äärellisenä. Pieni $m$
+tarkoittaa, että nousu on pitkään maltillista ja kiihtyy jyrkästi vasta aivan lopussa; $m$:n
+lähellä yhtä nousu on lähes tasaista eksponentiaalista kasvua (kuva~\ref{fig:parametrit},
+vasen). Siksi suodatin vaatii $0.1<m<0.9$: lähellä nollaa sovitus selittää yksittäisen hypyn,
+ja lähellä yhtä kiihtyvyyttä ei käytännössä ole.
+
+\paragraph{Log-periodisuus ja $\omega$.} Kosinitermin argumentti on $\omega\ln(\tc-t)$
+eikä $\omega t$, joten värähtely ei ole tasajaksoista. Kun jäljellä oleva aika kerrotaan
+luvulla $\lambda=e^{2\pi/\omega}$, argumentti muuttuu tasan $2\pi$:llä ja kosini palaa samaan
+arvoon. Värähtelyn huiput $t_n$ toteuttavat siis
+\begin{equation}\label{eq:peaks}
+  \tc - t_n = \tau\,\lambda^{-n}, \qquad\text{joten}\qquad
+  \frac{t_{n+1}-t_n}{t_{n+2}-t_{n+1}} = \lambda ,
+\end{equation}
+eli jokainen jakso on $\lambda$-kertaa edellistä lyhyempi ja huiput kasautuvat
+geometrisesti kohti $\tc$:tä (kuva~\ref{fig:parametrit}, oikea). Tätä kutsutaan
+diskreetiksi skaalainvarianssiksi: kuvio näyttää samalta tietyillä aikaskaalan
+venytyksillä. Sornetten tulkinnassa se syntyy sijoittajien hierarkkisesta verkostosta, jossa
+pienet ryhmät muodostavat suurempia ryhmiä \citep{sornette2003}. Matemaattisesti
+yhtälö~\eqref{eq:lppls} on kompleksisen eksponentin $(\tc-t)^{m+i\omega}$ reaaliosa.
+Yhtälöstä~\eqref{eq:peaks} saadaan myös yksinkertainen tapa arvioida kriittinen hetki suoraan
+kolmesta peräkkäisestä huipusta:
+\begin{equation}\label{eq:tc3}
+  \tc = \frac{t_{n+1}^2 - t_n\,t_{n+2}}{2t_{n+1} - t_n - t_{n+2}} .
+\end{equation}
+Esimerkiksi arvolla $\omega=9$ saadaan $\lambda\approx 2$, jolloin jokainen jakso on puolet
+edellisestä. Suodattimen ehto $\omega>4$ ($\lambda<4.8$) karsii liian harvat ja $\omega<25$
+($\lambda>1.29$) liian tiheät, kohinan kaltaiset värähtelyt.
+
+\paragraph{Amplitudi $C$ ja vaihe $\phi$.} $C$ kertoo värähtelyjen koon suhteessa trendiin.
+Koska kosinin derivaatassa on kerroin $\omega$, värähtelyt vaikuttavat kasvuvauhtiin
+suhteessa $\omega|C|$, kun trendin vaikutus on $m|B|$. Jos $\omega|C|>m|B|$, kasvuvauhti ja
+sen mukana riskifunktio $h(t)$ voisivat muuttua välillä negatiivisiksi, mikä ei ole mielekästä.
+Tästä tulee vaimennusehto $D=m|B|/(\omega|C|)$ (luku~\ref{sec:suodatin}). Vaihe $\phi$ vain
+siirtää värähtelyjen ajoitusta, eikä sillä ole omaa taloudellista tulkintaa.
+
+\paragraph{Kriittinen hetki $\tc$.} $\tc$ on kuplan todennäköisin loppumisajankohta, ei varma
+romahduspäivä. JLS-mallissa romahdus on satunnainen hyppy, jonka todennäköisyys on suurin
+lähellä $\tc$:tä, mutta kupla voi päättyä jo aiemmin tai päättyä pehmeään laskuun:
+\citet{johansen2010} arvioivat, että noin kolmasosa kuplista päättyy ilman romahdusta. Mallin
+kannalta on myös olennaista, että on olemassa positiivinen todennäköisyys sille, ettei
+romahdusta tapahdu lainkaan ennen $\tc$:tä. Jos romahdus olisi varma, rationaaliset
+sijoittajat myisivät etukäteen, eikä kupla voisi syntyä. Kuvat~\ref{fig:malli} ja~\ref{fig:parametrit} havainnollistavat mallin osia.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{kuva1_malli.png}
+  \includegraphics[width=0.48\textwidth]{kuva1_malli.png}
   \caption{Synteettinen LPPLS-kupla. Katkoviiva on pelkkä potenssilakitrendi, ja musta käyrä
     lisää siihen log-periodiset värähtelyt. Siniset pisteet ovat kohinaisia
     \enquote{havaintoja}. Kasvu kiihtyy ja värähtelyt tihenevät kohti kriittistä
     hetkeä~$\tc$.}
   \label{fig:malli}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.78\textwidth]{kuva_parametrit.png}
+  \caption{Yhtälön~\eqref{eq:lppls} osat. Vasen: trendi eri $m$:n arvoilla (normalisoitu);
+    pienellä $m$:llä kasvu keskittyy $\tc$:n eteen, $m=1$ on eksponentiaalinen kasvu. Oikea:
+    log-periodinen osa ($\omega=9$); huiput $t_n$ lähestyvät $\tc$:tä geometrisesti,
+    yhtälö~\eqref{eq:peaks}.}
+  \label{fig:parametrit}
 \end{figure}
 
 % ---------------------------------------------------------------------------
@@ -203,7 +277,7 @@ rajataan tulevaisuuteen, malli etsii vain kuplia, jotka eivät ole vielä päät
 \subsection{Monta ikkunaa ja luottamusindikaattori}
 
 Yksittäinen sovitus on herkkä sille, mistä päivästä aikaikkuna alkaa, koska kuplan alkuhetkeä ei
-tunneta. Siksi sovitus tehdään 24 ikkunaan, joiden pituudet ovat tasavälein 125, 163, 202,
+tunneta. Siksi pitkässä menetelmässä sovitus tehdään 24 ikkunaan, joiden pituudet ovat tasavälein 125, 163, 202,
 \ldots, 1008 kauppapäivää (noin puolesta vuodesta neljään vuoteen; lyhin ikkuna kuten
 \citealp{zhang2016}) ja jotka kaikki päättyvät hetkeen $t_2$. Jokainen ikkuna antaa oman arvionsa
 parametreista. Luottamusindikaattori (\emph{LPPLS confidence}) on niiden ikkunoiden osuus, joiden
@@ -220,23 +294,48 @@ Shanghain pörssin vuoden 2015 kuplaan tilanteessa 1.6.2015.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{kuva2_shanghai.png}
-  \caption{Shanghai Composite, tarkastelupäivä 1.6.2015. Malli käytti vain sinisiä pisteitä.
-    Mediaani-$\tc$ oli 5.6.2015, ja todellinen huippu tuli 12.6.2015, minkä jälkeen indeksi laski
-    yli 40\,\% (oranssit pisteet).}
-  \label{fig:shanghai}
+  \begin{minipage}[t]{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{kuva2_shanghai.png}
+    \caption{Shanghai Composite, tarkastelupäivä 1.6.2015. Malli käytti vain sinisiä pisteitä.
+      Mediaani-$\tc$ oli 5.6.2015, ja todellinen huippu tuli 12.6.2015, minkä jälkeen indeksi
+      laski yli 40\,\% (oranssit pisteet).}
+    \label{fig:shanghai}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{kuva3_ikkunat.png}
+    \caption{Samat tiedot ikkunoittain. Jokainen vaakaviiva on yksi ikkuna, joka päättyy
+      1.6.2015. Sinisten ikkunoiden sovitukset läpäisivät suodattimen, ja punaiset merkit ovat
+      niiden $\tc$-arviot. $C_P = 4/24 \approx 17\,\%$; yksi ikkuna vastaa noin neljää
+      prosenttiyksikköä, joten raja 10\,\% vaatii vähintään kolme hyväksyttyä ikkunaa.}
+    \label{fig:ikkunat}
+  \end{minipage}
 \end{figure}
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.72\textwidth]{kuva3_ikkunat.png}
-  \caption{Samat tiedot ikkunoittain. Jokainen vaakaviiva on yksi sovitusikkuna, joka päättyy
-    1.6.2015. Sinisten ikkunoiden sovitukset läpäisivät suodattimen, ja punaiset merkit ovat
-    niiden $\tc$-arviot. Luottamusindikaattori oli $4/24 \approx 17\,\%$. Jokainen ikkuna vastaa
-    noin neljää prosenttiyksikköä, joten kuplan raja 10\,\% vaatii vähintään kolme hyväksyttyä
-    ikkunaa.}
-  \label{fig:ikkunat}
-\end{figure}
+\subsection{Kaksi aikaskaalaa: pitkä ja lyhyt menetelmä}\label{sec:lyhyt}
+
+Kuplia syntyy eri aikaskaaloilla: osa kehittyy vuosia, osa muutamassa kuukaudessa.
+\citet{zhang2016} yhdistävätkin eri pituisten ikkunoiden tuloksia, ja Sornetten ryhmän
+seurantaindikaattoreissa lyhyimmät ikkunat ovat noin 30 kauppapäivää. Sovellus ajaa siksi
+jokaiselle tunnukselle kaksi erillistä skannausta samaan hintasarjaan. Pitkä menetelmä (P)
+käyttää edellä kuvattuja 24 ikkunaa. Lyhyt menetelmä (L) käyttää 52 tasavälistä ikkunaa
+30--252 kauppapäivää eli noin kuudesta viikosta vuoteen; peräkkäisten ikkunoiden ero on noin
+neljä kauppapäivää.
+Molemmille lasketaan oma luottamusindikaattori yhtälön~\eqref{eq:ci} mukaan: $C_P$ ja $C_L$.
+Lyhyen menetelmän ehdot eroavat kahdessa kohdassa. Ensinnäkin hinnannousu lasketaan vuoden
+pohjasta ja rajana on 50\,\% (luku~\ref{sec:nousu}). Toiseksi kriittinen hetki saa olla koko
+hakualueella $\tc \le t_2 + 0.2\,\Delta t$, kun pitkässä menetelmässä raja on $0.13\,\Delta t$.
+Koska raja on suhteessa ikkunan pituuteen, tiukka raja hyväksyisi vuoden ikkunassa vain noin
+viiden viikon päähän osuvan $\tc$:n ja kuuden viikon ikkunassa vain muutaman päivän. Väljempi
+raja tekee lyhyestä menetelmästä aikaisemman varoittajan (luku~\ref{sec:kalibrointi}).
+
+Jokainen skannaus tallentaa $C_P$:n ja $C_L$:n tietokantaan, ja \emph{Päivitä sarjat} skannaa
+lisäksi kaikki seurattavat tunnukset. Näin kummastakin indikaattorista muodostuu aikasarja
+$C_P(t_2)$ ja $C_L(t_2)$, joka piirretään tallennetun kuplan kuvaajaan oikealle asteikolle
+(pitkä punaisella, lyhyt vihreällä). Nouseva viiva kertoo, että yhä useampi ikkuna näkee
+kuplan ja ennustaa sen päättyvän pian; indikaattorin kehitys on hyödyllisempi signaali kuin
+yksittäinen arvo \citep{zhang2016}.
 
 % ---------------------------------------------------------------------------
 \section{Kuplan havaitsemisen ehdot}\label{sec:ehdot}
@@ -272,7 +371,7 @@ selittämästä yksittäistä heilahdusta \enquote{värähtelyksi}.
     log-taajuus $\omega$ & $4 < \omega < 25$ & realistinen värähtely \citep{wheatley2019} \\
     vaimennus $D$ & $D \ge 0.5$ & värähtelyt eivät hallitse trendiä \citep{wheatley2019} \\
     puolijaksot $O$ & $O \ge 2.5$ & aitoa värähtelyä, ei kohinaa \citep{zhang2016} \\
-    kriittinen hetki & $t_2 < \tc \le t_2 + 0.13\,\Delta t$ & ennuste on lähellä ja tulevaisuudessa \citep{zhang2016} \\
+    kriittinen hetki & $t_2 < \tc \le t_2 + 0.13\,\Delta t$ & ennuste on lähellä ja tulevaisuudessa \citep{zhang2016}; lyhyessä menetelmässä $0.2\,\Delta t$ \\
     sovitusvirhe & $\mathrm{RMSE} \le 0.15$ & kalibroitu testikuplilla; kryptovaluutat ovat volatiileja \\
     suunta & $B<0$ / $B>0$ & kupla / antikupla \\
     \bottomrule
@@ -281,7 +380,7 @@ selittämästä yksittäistä heilahdusta \enquote{värähtelyksi}.
   \label{tab:suodatin}
 \end{table}
 
-\subsection{Hinnannousun ehto}
+\subsection{Hinnannousun ehto}\label{sec:nousu}
 
 LPPLS-muoto voi löytyä myös hitaasta ja vaatimattomasta noususta. Kuplalta edellytetään siksi
 lisäksi suurta toteutunutta nousua. \citet{greenwood2019} tutkivat toimialaportfolioita vuosilta
@@ -293,12 +392,16 @@ seuraavien kahden vuoden aikana oli noin 53\,\%. 50\,\%:n nousulla todennäköis
 \end{equation}
 Kuplalta vaaditaan $R \ge 1$ eli hinnan kaksinkertaistuminen. Antikuplalta vaaditaan vastaavasti
 vähintään 50\,\%:n lasku kahden vuoden huipusta. Log-asteikolla molemmat ovat yhtä suuria
-muutoksia ($\ln 2$).
+muutoksia ($\ln 2$). Lyhyessä menetelmässä jakso on 365 päivää ja rajat ovat puolet
+pienemmät: kuplalta vaaditaan $R \ge 0.5$ ja lähellä-tilalta $R\ge0.25$. Antikuplan raja
+on vastaavasti noin 33\,\%:n lasku, sillä $1/(1-0.33)\approx 1.5$.
 
 \subsection{Luokittelu ja seuranta}
 
 Lopullinen luokitus yhdistää luottamusindikaattorin ja hinnannousun
-(taulukko~\ref{tab:luokat}). Kuplaksi luokiteltu tilanne tallennetaan tietokantaan.
+(taulukko~\ref{tab:luokat}), ja se tehdään kummallekin menetelmälle erikseen. Kupla
+tallennetaan tietokantaan, jos kumpi tahansa menetelmä luokittelee tilanteen kuplaksi, ja
+tallenteeseen merkitään havainnut menetelmä (P, L tai P+L).
 Tallennettava ennuste jäädytetään: parametreja ei myöhemmin päivitetä, vaan ennustetta verrataan
 uuteen dataan. Seurannassa etsitään huippu $t^*$ havaintopäivän ja ennustevälin lopun välistä.
 Kupla on \emph{toteutunut}, jos huippua seuraa 90 päivän sisällä vähintään 15\,\%:n pudotus, eli
@@ -311,20 +414,20 @@ $\pm 30$ päivää) ohitetaan ilman pudotusta, ja muuten \emph{odottaa}.
     \toprule
     Tila & Ehdot & Toiminto \\
     \midrule
-    kupla & $\mathrm{CI} \ge 10\,\%$, mediaani-$\tc \le 6$~kk ja $R \ge 100\,\%$ & tallennus ja seuranta \\
-    lähellä & $\mathrm{CI} \ge 5\,\%$ ja $R \ge 50\,\%$ & näytetään taulukossa \\
+    kupla & $C \ge 10\,\%$, mediaani-$\tc \le 6$~kk ja $R \ge 100\,\%$ (L: $R_{1\,\mathrm{v}} \ge 50\,\%$) & tallennus ja seuranta \\
+    lähellä & $C \ge 5\,\%$ ja $R \ge 50\,\%$ (L: $R_{1\,\mathrm{v}} \ge 25\,\%$) & näytetään taulukossa \\
     ei & muut & -- \\
     \bottomrule
   \end{tabularx}
-  \caption{Skannauksen luokittelu.}
+  \caption{Skannauksen luokittelu. $C$ on menetelmän luottamusindikaattori ($C_P$ tai $C_L$).}
   \label{tab:luokat}
 \end{table}
 
 % ---------------------------------------------------------------------------
 \section{Kalibrointi ja rajoitukset}\label{sec:kalibrointi}
 
-Raja-arvot valittiin kokeilemalla eri yhdistelmiä kahdeksalla historiallisella kuplalla ja
-yhdellätoista vertailutapauksella (taulukko~\ref{tab:testit}). Kuusi kahdeksasta kuplasta
+Pitkän menetelmän raja-arvot valittiin kokeilemalla eri yhdistelmiä kahdeksalla historiallisella
+kuplalla ja yhdellätoista vertailutapauksella (taulukko~\ref{tab:testit}). Kuusi kahdeksasta kuplasta
 tunnistui, eikä yksikään vertailutapaus luokittunut kuplaksi. Vertailutapauksia olivat S\&P 500
 vuosina 2007 ja 2019, DAX 2014 sekä yhdeksän indeksiä lokakuussa 2026, joista S\&P 500 ja NYSE
 FANG+ luokittuivat tilaan \enquote{lähellä}. Kriittisen hetken arvio osui 0--4 viikon päähän
@@ -333,7 +436,7 @@ todellisesta huipusta. Nikkei 1989 jäi tunnistamatta, koska sen nousu kahdessa 
 suodattimen.
 
 \begin{table}[htbp]
-  \centering\small
+  \centering\footnotesize
   \begin{tabular}{@{}l r r l l l@{}}
     \toprule
     Tapaus (tarkastelupäivä) & CI & Nousu 2 v & Tulos & Ennuste $\tc$ & Todellinen huippu \\
@@ -348,22 +451,55 @@ suodattimen.
     Bitcoin 15.3.2021      & 4\,\%  & $+1311\,\%$ & ei    & --         & 13.4.2021 \\
     \bottomrule
   \end{tabular}
-  \caption{Historialliset testikuplat nykyisillä ehdoilla.}
+  \caption{Historialliset testikuplat pitkällä menetelmällä.}
   \label{tab:testit}
 \end{table}
+
+Lyhyen menetelmän $\tc$-raja kalibroitiin erikseen 13 kuplatilanteella, joiden tarkastelupäivä oli
+1--8 viikkoa ennen todellista huippua, sekä 29 vertailutapauksella (indeksejä, osakkeita, raaka-aineita
+ja kryptoja eri vuosilta ja marraskuulta 2026). Taulukossa~\ref{tab:lyhyt} on valitun rajan tulos.
+Raja-arvolla $0.13\,\Delta t$ lyhyt menetelmä tunnisti vain 3/13 tilannetta ja yleensä vasta aivan
+huipun alla, kun raja-arvolla $0.2\,\Delta t$ tunnistuu 8/13. Vertailutapauksista kuplaksi
+luokittui molemmilla rajoilla vain yksi (KWEB-rahaston antikupla marraskuussa 2026), ja
+lähellä-tilaan nousivat S\&P 500 heinäkuussa 2007 ja joulukuussa 2021 sekä DAX kesäkuussa 2014.
+Väljempi raja antaa siis aikaisemman varoituksen lisäämättä vääriä hälytyksiä juurikaan.
+
+\begin{table}[htbp]
+  \centering\footnotesize
+  \begin{tabular}{@{}l r r r l l@{}}
+    \toprule
+    Tapaus (tarkastelupäivä) & Ennen huippua & $C_L$ & Nousu 1 v & Tulos & Ennuste $\tc$ \\
+    \midrule
+    Bitcoin 15.11.2017    & 31 pv & 25\,\% & $+928\,\%$  & kupla & 16.12.2017 \\
+    Shanghai 3.9.2007     & 43 pv & 33\,\% & $+221\,\%$  & kupla & 10.9.2007 \\
+    Shanghai 4.5.2015     & 39 pv & 46\,\% & $+123\,\%$  & kupla & 28.6.2015 \\
+    Nasdaq 15.2.2000      & 24 pv & 4\,\%  & $+97\,\%$   & ei    & -- \\
+    Nasdaq 1.3.2000       & 9 pv  & 33\,\% & $+112\,\%$  & kupla & 2.3.2000 \\
+    Bitcoin 15.3.2021     & 29 pv & 17\,\% & $+1015\,\%$ & kupla & 22.4.2021 \\
+    Bitcoin 15.10.2021    & 24 pv & 0\,\%  & $+444\,\%$  & ei    & -- \\
+    Nikkei 225 15.11.1989 & 44 pv & 0\,\%  & $+24\,\%$   & ei    & -- \\
+    \bottomrule
+  \end{tabular}
+  \caption{Lyhyt menetelmä ($\tc \le t_2 + 0.2\,\Delta t$) historiallisissa kuplissa, aikaisin
+    tunnistettu tilanne kustakin kuplasta. Bitcoin 1.11.2017 ja Nasdaq 14.1.2000 jäivät tunnistamatta.}
+  \label{tab:lyhyt}
+\end{table}
+
+Menetelmät täydentävät toisiaan: pitkä antaa tarkemman $\tc$-arvion mutta syttyy yleensä vasta
+viimeisinä viikkoina, lyhyt varoittaa aiemmin ja tunnisti myös Bitcoinin huhtikuun 2021 huipun,
+jonka pitkä ohitti, mutta sen $\tc$-arviot hajoavat enemmän.
 
 Tuloksia on tulkittava varoen. Rajat valittiin samoilla tapauksilla, joilla niitä testattiin,
 joten osuvuus uusilla aineistoilla on todennäköisesti heikompi. Parametri $\tc$ on tunnetusti
 huonosti määräytyvä: kuplan alku on helpompi tunnistaa kuin sen loppu, ja eri ikkunat antavat
-hajanaisia arvioita \citep{zhang2016}. Malli kuvaa sisäsyntyisiä kuplia, joten se ei ennakoi
-ulkoisia shokkeja kuten pandemiaa tai sotaa. Kupla voi myös päättyä hitaaseen laskuun. Lisäksi
-Yahoo Financen data voi sisältää puutteita. Sovellus on tarkoitettu tutkimus- ja
+hajanaisia arvioita \citep{zhang2016}. Malli ei ennakoi ulkoisia shokkeja, kupla voi päättyä
+hitaaseen laskuun, ja Yahoo Financen data voi sisältää puutteita. Sovellus on tutkimus- ja
 opiskelukäyttöön, eikä sen tulos ole sijoitussuositus.
 
 % ---------------------------------------------------------------------------
 \begin{thebibliography}{9}
-\small
-\setlength{\itemsep}{2pt}
+\footnotesize
+\setlength{\itemsep}{0pt}
 
 \bibitem[Filimonov ja Sornette(2013)]{filimonov2013}
 Filimonov, V. \& Sornette, D. (2013). A stable and robust calibration scheme of the log-periodic

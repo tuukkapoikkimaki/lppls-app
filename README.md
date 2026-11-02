@@ -87,7 +87,7 @@ as-of-päivään. A, B, C1 ja C2 ratkaistaan lineaarisesti, ja (tc, m, ω) haeta
 | log-taajuus ω | 4 – 25 | Wheatley ym. 2018 (Bitcoin-LPPLS), lppls-kirjasto |
 | damping m\|B\|/(ω\|C\|) | ≥ 0.5 | sama |
 | puolivärähtelyt ω/π·ln((tc−t1)/(tc−t2)) | ≥ 2.5 | Zhang, Zhang & Sornette 2016 |
-| kriittinen hetki tc | as-of < tc ≤ as-of + 0.13·ikkuna | sama (vain tulevaisuuteen) |
+| kriittinen hetki tc | as-of < tc ≤ as-of + 0.13·ikkuna (lyhyt: 0.2) | sama (vain tulevaisuuteen) |
 | sovitusvirhe (log-RMSE) | ≤ 0.15 | kalibroitu testikuplilla |
 | B | < 0 kupla, > 0 antikupla | |
 
@@ -106,12 +106,23 @@ Antikuplalla vastaava ehto on lasku ≥ 50 %.
 | ⚪ ei | muut |
 
 **5. Lyhyt menetelmä (L):** 52 tasavälistä ikkunaa 30–252 kauppapäivää (~6 vk – 1 v; lyhin
-kuten Sornetten lyhyen aikaskaalan indikaattoreissa). Suodatin, confidence-rajat ja horisontti
-ovat samat kuin pitkässä menetelmässä, mutta nousuehto lasketaan vuoden pohjasta: **≥ 50 %**
-kuplalle ja ≥ 25 % lähellä-tilalle (antikuplalla lasku ≥ 33 %). tc-raja on suhteessa
-ikkunaan (0,13 · ikkuna), joten lyhyet ikkunat hyväksyvät vain lähellä olevan tc:n, esim. vuoden ikkunassa noin 5 viikkoa.
-Siksi C L nousee tyypillisesti vasta aivan kuplan loppuvaiheessa. Esimerkiksi BTC 2017-12-01:
-C P 17 % ja C L 29 % (P+L), mutta Shanghai 2015-06-01: C P 17 % ja C L 0 %.
+kuten Sornetten lyhyen aikaskaalan indikaattoreissa). Confidence-rajat ja horisontti ovat samat
+kuin pitkässä menetelmässä, mutta nousuehto lasketaan vuoden pohjasta: **≥ 50 %** kuplalle ja
+≥ 25 % lähellä-tilalle (antikuplalla lasku ≥ 33 %). Lisäksi tc-raja on väljempi:
+**tc ≤ as-of + 0,2 · ikkuna** (pitkässä 0,13), jotta lyhyt menetelmä varoittaa aikaisemmin.
+
+Kalibrointi lyhyelle menetelmälle (13 kuplatilannetta 1–8 viikkoa ennen huippua ja 29 vertailua):
+
+| tc-raja | Kuplatilanteista kupla | Vertailuista kupla / lähellä |
+|---|---|---|
+| 0,13 | 3/13 | 1/29 / 1 |
+| **0,20** | **8/13** | 1/29 / 3 |
+
+Väljemmällä rajalla lyhyt havaitsee esim. BTC 2017 31 päivää, Shanghai 2007 43 päivää ja
+Shanghai 2015 39 päivää ennen huippua sekä BTC huhtikuu 2021 (tc 22.4., huippu 13.4.).
+Vertailujen ainoa kupla on KWEB:n antikupla tänään (sama myös raja-arvolla 0,13); lähellä-tilaan
+nousevat S&P 500 7/2007 ja 12/2021 sekä DAX 6/2014. Nasdaq 2000 tunnistuu vasta 9 päivää
+ennen huippua, eikä Nikkei 1989 (vuoden nousu +24 %) tunnistu ollenkaan.
 
 Testikuplilla 6/8 tunnistuu kupliksi: BTC 2017, Shanghai 2007 (kaksi päivää), Shanghai 2015 ja
 Nasdaq 2000 (kaksi päivää). Nikkei 1989 jää tunnistamatta (nousu vain +69 %), samoin BTC

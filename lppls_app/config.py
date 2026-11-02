@@ -314,10 +314,15 @@ class Config:
     short_runup_days: int = 365
     short_min_runup: float = 0.50
     short_near_runup: float = 0.25
+    # Aikaisempi varoitus: hyväksytään koko tc-hakualue (≤ as_of + 0.2·dt), kun pitkässä
+    # raja on 0.13·dt. Kalibrointi (13 kuplatilannetta 1–8 vk ennen huippua, 29 vertailua):
+    # 0.13 → 3/13, 0.2 → 8/13 kuplista; vertailuista kupla 1/29 molemmilla (KWEB-antikupla).
+    short_tc_qual_frac: float = 0.20
 
     def short(self) -> "Config":
-        """Lyhyen menetelmän asetukset; suodatin, confidence-rajat ja horisontti ovat samat."""
+        """Lyhyen menetelmän asetukset; muu suodatin, confidence-rajat ja horisontti ovat samat."""
         return replace(self, method="L",
                        window_min=self.short_window_min, window_max=self.short_window_max,
                        window_count=self.short_window_count, runup_days=self.short_runup_days,
-                       min_runup=self.short_min_runup, near_runup=self.short_near_runup)
+                       min_runup=self.short_min_runup, near_runup=self.short_near_runup,
+                       tc_qual_frac=self.short_tc_qual_frac)

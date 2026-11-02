@@ -39,6 +39,7 @@ def test_short_config(cfg):
     sc = cfg.short()
     assert sc.method == "L" and sc.window_max == 252 and sc.runup_days == 365
     assert sc.min_runup == 0.5 and sc.confidence_threshold == cfg.confidence_threshold
+    assert sc.tc_qual_frac == 0.2 and cfg.tc_qual_frac == 0.13
     assert cfg.method == "P"  # alkuperäinen ei muutu
 
 
