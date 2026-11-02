@@ -217,3 +217,13 @@ def test_upgrade_from_v7_adds_method_columns(tmp_path):
     assert b["method"] == "P" and b["conf_pos"] == pytest.approx(0.2)
     assert b["conf_pos_l"] is None and b["move_p"] == pytest.approx(1.5)
     assert len(s.confidence_history("X", "P", "pos")) == 1
+
+
+def test_ticker_names(store):
+    store.add_ticker("OMA", "Oma nimi")
+    store.add_ticker("TYHJA")
+    store.remove_ticker("OMA")  # poistetunkin nimi löytyy tallennetuille kuplille
+    names = store.ticker_names()
+    assert names["OMA"] == "Oma nimi"
+    assert "TYHJA" not in names
+    assert names["QTUM"].startswith("Kvanttilaskenta")  # oletuslistalta

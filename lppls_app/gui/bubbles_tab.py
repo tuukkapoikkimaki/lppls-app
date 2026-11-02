@@ -17,7 +17,7 @@ from .workers import UpdateWorker
 
 # Menetelmä: P = pitkä, L = lyhyt, P+L = molemmat havaitsivat. C-sarakkeet ovat havaitsemispäivän
 # arvot; "–" = kupla tallennettiin ennen lyhyttä menetelmää.
-COLUMNS = ["#", "Tunnus", "Menetelmä", "Havaittu", "C P +", "C P −", "C L +", "C L −",
+COLUMNS = ["#", "Tunnus", "Nimi", "Menetelmä", "Havaittu", "C P +", "C P −", "C L +", "C L −",
            "Muutos 2 v", "Muutos 1 v", "Ennustettu tc", "tc-väli", "Todellinen käänne",
            "Ero (pv)", "Muutos", "Tila", "Laji", "Seuranta", "Päivitetty"]
 STATUS_COLOR = {HIT: QColor(210, 240, 210), MISS: QColor(240, 215, 215),
@@ -110,6 +110,7 @@ class BubblesTab(QWidget):
     def reload(self):
         selected = self.selected_id()
         self._refresh_ticker_filter()
+        names = self.storage.ticker_names()
         self.table.setRowCount(0)
         for b in self._filtered():
             row = self.table.rowCount()
@@ -122,7 +123,8 @@ class BubblesTab(QWidget):
                 return "–" if v is None else (f"{v:+.0%}" if sign else f"{v:.0%}")
 
             values = [
-                str(b["id"]), b["ticker"], b["method"] or "P", b["detected_as_of"],
+                str(b["id"]), b["ticker"], names.get(b["ticker"], ""), b["method"] or "P",
+                b["detected_as_of"],
                 pct(b["conf_pos"]), pct(b["conf_neg"]), pct(b["conf_pos_l"]), pct(b["conf_neg_l"]),
                 pct(b["move_p"], True), pct(b["move_l"], True), b["tc"],
                 f"{b['tc_p10']} … {b['tc_p90']}",
@@ -160,12 +162,13 @@ class BubblesTab(QWidget):
         follow = self.storage.tracked_prices(b["ticker"], after=b["detected_as_of"])
         # Confidence-historia kuplan suuntaan: jokainen skannaus lisää pisteen
         conf = {m: self.storage.confidence_history(b["ticker"], m, b["sign"]) for m in ("P", "L")}
+        name = self.storage.ticker_names().get(b["ticker"], "")
         safe = b["ticker"].replace("^", "").replace("=", "")
         # Sama näkymä säilyy, kun vaihdetaan kuplasta toiseen
         self.chart.set_pages([
-            ("log-hinta", lambda ax: draw_tracked(ax, b, snap, follow, conf=conf)),
+            ("log-hinta", lambda ax: draw_tracked(ax, b, snap, follow, conf=conf, name=name)),
             ("hinta ilman logaritmia",
-             lambda ax: draw_tracked(ax, b, snap, follow, log=False, conf=conf)),
+             lambda ax: draw_tracked(ax, b, snap, follow, log=False, conf=conf, name=name)),
         ], f"{safe}_tc-{b['tc']}.png", page=self.chart.page)
         self.stop_track_btn.setText("Lopeta seuranta" if b["tracking"] else "Jatka seurantaa")
 

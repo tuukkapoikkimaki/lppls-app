@@ -59,7 +59,11 @@ def _sign_text(sign: str | None) -> str:
     return {"pos": "Positiivinen kupla", "neg": "Negatiivinen kupla (antikupla)"}.get(sign, "")
 
 
-def draw_scan(ax: Axes, sr) -> None:
+def _label(ticker: str, name: str = "") -> str:
+    return f"{ticker} · {name}" if name else ticker
+
+
+def draw_scan(ax: Axes, sr, name: str = "") -> None:
     """Skannauksen tulos: hinnat as_of-päivään, mediaanisovite ja tc-jakauma."""
     _reset(ax)
     s = sr.series
@@ -71,7 +75,7 @@ def draw_scan(ax: Axes, sr) -> None:
         _tc_band(ax, sr.tc_median, sr.tc_p10, sr.tc_p90)
     ax.axvline(sr.as_of, color="grey", linewidth=1, label=f"as of {sr.as_of:%Y-%m-%d}")
     conf = f"C {sr.method} +{sr.conf_pos:.0%} / −{sr.conf_neg:.0%}"
-    _style(ax, f"{sr.ticker} – {METHOD_NAMES.get(sr.method, '')} menetelmä – {conf}")
+    _style(ax, f"{_label(sr.ticker, name)} – {METHOD_NAMES.get(sr.method, '')} menetelmä – {conf}")
     if sr.sign:
         ax.text(0.5, 0.02, _sign_text(sr.sign), transform=ax.transAxes, ha="center", fontsize=10)
 
@@ -96,7 +100,8 @@ def _conf_axis(ax: Axes, conf: dict[str, pd.Series]):
 
 
 def draw_tracked(ax: Axes, bubble, snapshot: pd.Series, follow: pd.Series,
-                 log: bool = True, conf: dict[str, pd.Series] | None = None) -> None:
+                 log: bool = True, conf: dict[str, pd.Series] | None = None,
+                 name: str = "") -> None:
     """Tallennettu kupla: jäädytetty ennuste vs. havainnon jälkeinen toteuma.
 
     log=False piirtää hinnan sellaisenaan (ilman logaritmia) ja koko seuratun
@@ -132,5 +137,6 @@ def draw_tracked(ax: Axes, bubble, snapshot: pd.Series, follow: pd.Series,
     if conf:
         _conf_axis(ax, conf)
     test = " (testi)" if bubble["is_test"] else ""
-    _style(ax, f"{bubble['ticker']}{test} – {bubble['status']}", "ln P" if log else "Hinta")
+    _style(ax, f"{_label(bubble['ticker'], name)}{test} – {bubble['status']}",
+           "ln P" if log else "Hinta")
     ax.text(0.5, 0.02, _sign_text(bubble["sign"]), transform=ax.transAxes, ha="center", fontsize=10)

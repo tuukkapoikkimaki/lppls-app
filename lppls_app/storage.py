@@ -101,6 +101,13 @@ class Storage:
             "ON CONFLICT(ticker) DO UPDATE SET active=1", (ticker, name, _now()))
         self.con.commit()
 
+    def ticker_names(self) -> dict[str, str]:
+        """Tunnus → nimi: seurantalistalta (myös poistetut), puuttuvat oletuslistalta."""
+        names = {t: n for t, n in DEFAULT_WATCHLIST}
+        names.update({r["ticker"]: r["name"] for r in self.con.execute(
+            "SELECT ticker, name FROM watchlist WHERE name IS NOT NULL AND name != ''")})
+        return names
+
     def remove_ticker(self, ticker: str):
         self.con.execute("UPDATE watchlist SET active=0 WHERE ticker=?", (ticker,))
         self.con.commit()

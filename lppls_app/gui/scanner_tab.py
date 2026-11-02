@@ -20,7 +20,7 @@ STATUS_LABEL = {"kupla": "🔴 kupla", "lähellä": "🟡 lähellä", "ei": "⚪
 STATUS_COLOR = {"kupla": QColor(255, 220, 220), "lähellä": QColor(255, 245, 205)}
 # P = pitkä menetelmä (24 ikkunaa, ~0,5–4 v), L = lyhyt (52 ikkunaa, ~6 vk – 1 v).
 # tc-sarakkeet tulevat kuplan havainneesta menetelmästä, tasatilanteessa pitkästä.
-COLUMNS = ["Tunnus", "C P +", "C P −", "C L +", "C L −", "Muutos 2 v", "Muutos 1 v",
+COLUMNS = ["Tunnus", "Nimi", "C P +", "C P −", "C L +", "C L −", "Muutos 2 v", "Muutos 1 v",
            "Mediaani-tc", "tc-väli (10–90 %)", "Päiviä tc:hen", "Tila P", "Tila L"]
 
 
@@ -37,6 +37,7 @@ class ScannerTab(QWidget):
         self.storage, self.cfg = storage, cfg
         self.results: dict[str, object] = {}  # ScanSession: tunnus -> DualScan (muistissa)
         self.worker: ScanWorker | None = None
+        self.names: dict[str, str] = {}  # tunnus -> nimi taulukkoon ja kuviin
         self._build()
         self.reload_watchlist()
         self.chart.clear("Valitse tunnukset ja paina Skannaa")
@@ -216,6 +217,7 @@ class ScannerTab(QWidget):
             return
         self.is_test = self.asof_check.isChecked()
         self.results.clear()
+        self.names = self.storage.ticker_names()
         self.table.setRowCount(0)
         self.chart.clear("Skannataan…")
         self._set_running(True)
@@ -246,6 +248,7 @@ class ScannerTab(QWidget):
         row = self.table.rowCount()
         self.table.insertRow(row)
         self.table.setItem(row, 0, QTableWidgetItem(ticker))
+        self.table.setItem(row, 1, QTableWidgetItem(self.names.get(ticker, "")))
         self.table.setItem(row, len(COLUMNS) - 1, QTableWidgetItem("⚠ virhe: " + err))
 
     def on_result(self, dual):
@@ -263,7 +266,7 @@ class ScannerTab(QWidget):
         self.table.insertRow(row)
         days = "–" if sr.tc_median is None else str((sr.tc_median - sr.as_of).days)
         lo, sh = dual.long, dual.short
-        values = [sr.ticker, f"{lo.conf_pos:.0%}", f"{lo.conf_neg:.0%}",
+        values = [sr.ticker, self.names.get(sr.ticker, ""), f"{lo.conf_pos:.0%}", f"{lo.conf_neg:.0%}",
                   f"{sh.conf_pos:.0%}", f"{sh.conf_neg:.0%}",
                   f"{lo.change:+.0%}", f"{sh.change:+.0%}", _d(sr.tc_median),
                   f"{_d(sr.tc_p10)} … {_d(sr.tc_p90)}" if sr.tc_p10 is not None else "–",
@@ -293,8 +296,9 @@ class ScannerTab(QWidget):
             self.chart.clear("Ei tulosta")
             return
         safe = dual.ticker.replace("^", "").replace("=", "")
+        name = self.names.get(dual.ticker, "")
         # ← / → vaihtaa pitkän ja lyhyen menetelmän kuvaajan välillä
         self.chart.set_pages([
-            ("pitkä menetelmä (P)", lambda ax: draw_scan(ax, dual.long)),
-            ("lyhyt menetelmä (L)", lambda ax: draw_scan(ax, dual.short)),
+            ("pitkä menetelmä (P)", lambda ax: draw_scan(ax, dual.long, name)),
+            ("lyhyt menetelmä (L)", lambda ax: draw_scan(ax, dual.short, name)),
         ], f"{safe}_asof-{dual.as_of:%Y-%m-%d}.png", page=self.chart.page)
