@@ -18,8 +18,10 @@ from .workers import ScanWorker
 
 STATUS_LABEL = {"kupla": "🔴 kupla", "lähellä": "🟡 lähellä", "ei": "⚪ ei"}
 STATUS_COLOR = {"kupla": QColor(255, 220, 220), "lähellä": QColor(255, 245, 205)}
-COLUMNS = ["Tunnus", "Conf +", "Conf −", "Muutos 2 v", "Mediaani-tc", "tc-väli (10–90 %)",
-           "Päiviä tc:hen", "Tila"]
+# P = pitkä menetelmä (24 ikkunaa, ~0,5–4 v), L = lyhyt (52 ikkunaa, ~6 vk – 1 v).
+# tc-sarakkeet tulevat kuplan havainneesta menetelmästä, tasatilanteessa pitkästä.
+COLUMNS = ["Tunnus", "C P +", "C P −", "C L +", "C L −", "Muutos 2 v", "Muutos 1 v",
+           "Mediaani-tc", "tc-väli (10–90 %)", "Päiviä tc:hen", "Tila P", "Tila L"]
 
 
 def _d(ts) -> str:
@@ -33,7 +35,7 @@ class ScannerTab(QWidget):
     def __init__(self, storage: Storage, cfg: Config, parent=None):
         super().__init__(parent)
         self.storage, self.cfg = storage, cfg
-        self.results: dict[str, object] = {}  # ScanSession: tunnus -> ScanResult (muistissa)
+        self.results: dict[str, object] = {}  # ScanSession: tunnus -> DualScan (muistissa)
         self.worker: ScanWorker | None = None
         self._build()
         self.reload_watchlist()
@@ -246,24 +248,26 @@ class ScannerTab(QWidget):
         self.table.setItem(row, 0, QTableWidgetItem(ticker))
         self.table.setItem(row, len(COLUMNS) - 1, QTableWidgetItem("⚠ virhe: " + err))
 
-    def on_result(self, sr):
-        self.results[sr.ticker] = sr
-        scan_id = self.storage.save_scan(sr)
-        status = sr.status(self.cfg)
-        if sr.detected:
-            bubble_id = self.storage.save_bubble(sr, scan_id, self.is_test)
+    def on_result(self, dual):
+        self.results[dual.ticker] = dual
+        bubble_id = self.storage.save_dual(dual, self.is_test)
+        sr = dual.primary
+        if bubble_id is not None:
             self.status_message.emit(
-                f"Kupla havaittu: {sr.ticker}, tc ≈ {sr.tc_median:%Y-%m-%d} – "
+                f"Kupla havaittu ({dual.method}): {sr.ticker}, tc ≈ {sr.tc_median:%Y-%m-%d} – "
                 f"tallennettu (#{bubble_id}) ja seuranta aloitettu")
             self.bubbles_changed.emit()
 
+        status = sr.state
         row = self.table.rowCount()
         self.table.insertRow(row)
         days = "–" if sr.tc_median is None else str((sr.tc_median - sr.as_of).days)
-        move = f"{sr.change:+.0%}"
-        values = [sr.ticker, f"{sr.conf_pos:.0%}", f"{sr.conf_neg:.0%}", move, _d(sr.tc_median),
+        lo, sh = dual.long, dual.short
+        values = [sr.ticker, f"{lo.conf_pos:.0%}", f"{lo.conf_neg:.0%}",
+                  f"{sh.conf_pos:.0%}", f"{sh.conf_neg:.0%}",
+                  f"{lo.change:+.0%}", f"{sh.change:+.0%}", _d(sr.tc_median),
                   f"{_d(sr.tc_p10)} … {_d(sr.tc_p90)}" if sr.tc_p10 is not None else "–",
-                  days, STATUS_LABEL[status]]
+                  days, STATUS_LABEL[lo.state], STATUS_LABEL[sh.state]]
         for col, v in enumerate(values):
             item = QTableWidgetItem(v)
             item.setData(Qt.UserRole, sr.ticker)
@@ -276,7 +280,7 @@ class ScannerTab(QWidget):
     def on_finished(self):
         self._set_running(False)
         self.progress.setValue(self.progress.maximum())
-        found = sum(1 for sr in self.results.values() if sr.detected)
+        found = sum(1 for dual in self.results.values() if dual.detected)
         self.progress_label.setText(f"Valmis: {len(self.results)} skannattu, {found} kuplaa")
         self.worker = None
 
@@ -284,10 +288,13 @@ class ScannerTab(QWidget):
         items = self.table.selectedItems()
         if not items:
             return
-        sr = self.results.get(items[0].data(Qt.UserRole))
-        if sr is None:
+        dual = self.results.get(items[0].data(Qt.UserRole))
+        if dual is None:
             self.chart.clear("Ei tulosta")
             return
-        draw_scan(self.chart.ax, sr)
-        safe = sr.ticker.replace("^", "").replace("=", "")
-        self.chart.redraw(f"{safe}_asof-{sr.as_of:%Y-%m-%d}.png")
+        safe = dual.ticker.replace("^", "").replace("=", "")
+        # ← / → vaihtaa pitkän ja lyhyen menetelmän kuvaajan välillä
+        self.chart.set_pages([
+            ("pitkä menetelmä (P)", lambda ax: draw_scan(ax, dual.long)),
+            ("lyhyt menetelmä (L)", lambda ax: draw_scan(ax, dual.short)),
+        ], f"{safe}_asof-{dual.as_of:%Y-%m-%d}.png", page=self.chart.page)

@@ -9,7 +9,8 @@ from lppls_app.model import lppls, to_years
 @pytest.fixture
 def cfg():
     # Kevyempi skannaus testeihin
-    return Config(window_min=120, window_max=480, window_count=10, n_starts=6, workers=1)
+    return Config(window_min=120, window_max=480, window_count=10, n_starts=6, workers=1,
+                  short_window_count=8)
 
 
 def synthetic_bubble(as_of="2020-06-01", tc="2020-07-15", n=600, noise=0.01, seed=1, B=-1.2):

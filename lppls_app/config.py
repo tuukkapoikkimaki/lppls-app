@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -301,3 +301,23 @@ class Config:
 
     # Rinnakkaisuus
     workers: int = max(1, (os.cpu_count() or 2) - 1)
+
+    # Menetelmä: "P" = pitkä (yllä olevat ikkunat), "L" = lyhyt (short()-muunnelma)
+    method: str = "P"
+
+    # Lyhyt menetelmä: 52 tasavälistä ikkunaa 30–252 kauppapäivää (~6 vk – 1 v).
+    # Lyhin ikkuna kuten Sornetten lyhyen aikaskaalan indikaattoreissa (~30 pv).
+    # Nousuehto vuodessa: ≥ 50 % kupla, ≥ 25 % lähellä (antikuplalle lasku ≥ 33 % log-peilinä).
+    short_window_min: int = 30
+    short_window_max: int = 252
+    short_window_count: int = 52
+    short_runup_days: int = 365
+    short_min_runup: float = 0.50
+    short_near_runup: float = 0.25
+
+    def short(self) -> "Config":
+        """Lyhyen menetelmän asetukset; suodatin, confidence-rajat ja horisontti ovat samat."""
+        return replace(self, method="L",
+                       window_min=self.short_window_min, window_max=self.short_window_max,
+                       window_count=self.short_window_count, runup_days=self.short_runup_days,
+                       min_runup=self.short_min_runup, near_runup=self.short_near_runup)

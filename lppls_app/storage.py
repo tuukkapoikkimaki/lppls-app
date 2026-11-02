@@ -10,10 +10,11 @@ import pandas as pd
 from .config import (COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, DEFAULT_WATCHLIST, INDEX_WATCHLIST,
                      THEME_WATCHLIST)
 from .model import from_years
-from .scanner import ScanResult
+from .scanner import DualScan, ScanResult
 
-SCHEMA_VERSION = 7  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
-                    # 6: 40 teemaa/osaketta/sektoria, 7: kvanttilaskenta (QTUM)
+SCHEMA_VERSION = 8  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
+                    # 6: 40 teemaa/osaketta/sektoria, 7: kvanttilaskenta (QTUM),
+                    # 8: lyhyt menetelmä (method-sarakkeet, scan_id_l)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -22,7 +23,8 @@ CREATE TABLE IF NOT EXISTS price_cache (
     ticker TEXT, date TEXT, price REAL, fetched_at TEXT, PRIMARY KEY (ticker, date));
 CREATE TABLE IF NOT EXISTS scans (
     id INTEGER PRIMARY KEY, ticker TEXT, as_of TEXT, run_at TEXT,
-    conf_pos REAL, conf_neg REAL, tc_median TEXT, tc_p10 TEXT, tc_p90 TEXT, move REAL);
+    conf_pos REAL, conf_neg REAL, tc_median TEXT, tc_p10 TEXT, tc_p90 TEXT, move REAL,
+    method TEXT DEFAULT 'P');
 CREATE TABLE IF NOT EXISTS bubbles (
     id INTEGER PRIMARY KEY, ticker TEXT, scan_id INTEGER REFERENCES scans(id),
     detected_as_of TEXT, is_test INTEGER, sign TEXT, confidence REAL,
@@ -30,7 +32,7 @@ CREATE TABLE IF NOT EXISTS bubbles (
     m REAL, omega REAL, A REAL, B REAL, C1 REAL, C2 REAL, r2 REAL,
     status TEXT DEFAULT 'odottaa', actual_peak_date TEXT, actual_peak_price REAL,
     max_drawdown REAL, last_updated TEXT, tracking INTEGER DEFAULT 1, note TEXT,
-    move REAL);
+    move REAL, method TEXT DEFAULT 'P', scan_id_l INTEGER REFERENCES scans(id));
 CREATE TABLE IF NOT EXISTS bubble_prices (
     bubble_id INTEGER REFERENCES bubbles(id) ON DELETE CASCADE,
     date TEXT, price REAL, PRIMARY KEY (bubble_id, date));
@@ -57,10 +59,14 @@ class Storage:
         self.con.execute("PRAGMA foreign_keys=ON")
         version = self.con.execute("PRAGMA user_version").fetchone()[0]
         self.con.executescript(SCHEMA)
-        for table in ("scans", "bubbles"):  # v3: vanhoihin tauluihin move-sarake
+        # Vanhoihin tauluihin puuttuvat sarakkeet (v3: move, v8: method ja scan_id_l)
+        added = [("scans", "move", "REAL"), ("bubbles", "move", "REAL"),
+                 ("scans", "method", "TEXT DEFAULT 'P'"), ("bubbles", "method", "TEXT DEFAULT 'P'"),
+                 ("bubbles", "scan_id_l", "INTEGER REFERENCES scans(id)")]
+        for table, col, decl in added:
             cols = {r[1] for r in self.con.execute(f"PRAGMA table_info({table})")}
-            if "move" not in cols:
-                self.con.execute(f"ALTER TABLE {table} ADD COLUMN move REAL")
+            if col not in cols:
+                self.con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
         if seed_watchlist and version < SCHEMA_VERSION:
             # Uusi kanta saa koko oletuslistan; vanhaan lisätään vain sen jälkeen tulleet
             # tunnukset, eikä käyttäjän poistamia palauteta
@@ -121,27 +127,42 @@ class Storage:
     def save_scan(self, sr: ScanResult) -> int:
         cur = self.con.execute(
             "INSERT INTO scans(ticker, as_of, run_at, conf_pos, conf_neg, tc_median, tc_p10, tc_p90, "
-            "move) VALUES (?,?,?,?,?,?,?,?,?)",
+            "move, method) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (sr.ticker, _d(sr.as_of), _now(), sr.conf_pos, sr.conf_neg,
-             _d(sr.tc_median), _d(sr.tc_p10), _d(sr.tc_p90), sr.change))
+             _d(sr.tc_median), _d(sr.tc_p10), _d(sr.tc_p90), sr.change, sr.method))
         self.con.commit()
         return cur.lastrowid
 
-    def save_bubble(self, sr: ScanResult, scan_id: int, is_test: bool) -> int:
-        """Tallentaa havaitun kuplan; sama tunnus + merkki + tc ±5 pv päivittää vanhan."""
+    def save_dual(self, dual: DualScan, is_test: bool) -> int | None:
+        """Tallentaa molemmat skannaukset ja kuplan, jos kumpi tahansa menetelmä havaitsi sen."""
+        scan_p, scan_l = self.save_scan(dual.long), self.save_scan(dual.short)
+        if not dual.detected:
+            return None
+        return self.save_bubble(dual.primary, scan_p, is_test, method=dual.method, scan_id_l=scan_l)
+
+    def save_bubble(self, sr: ScanResult, scan_id: int, is_test: bool,
+                    method: str | None = None, scan_id_l: int | None = None) -> int:
+        """Tallentaa havaitun kuplan; sama tunnus + merkki + tc ±5 pv päivittää vanhan.
+
+        scan_id on pitkän ja scan_id_l lyhyen menetelmän skannaus (C P / C L havaitessa).
+        """
         b = sr.best
         tc = sr.tc_median
+        method = method or sr.method
         dup = self.con.execute(
-            "SELECT id FROM bubbles WHERE ticker=? AND sign=? AND is_test=? AND tracking=1 "
+            "SELECT id, method FROM bubbles WHERE ticker=? AND sign=? AND is_test=? AND tracking=1 "
             "AND ABS(julianday(tc) - julianday(?)) <= 5",
             (sr.ticker, sr.sign, int(is_test), _d(tc))).fetchone()
+        if dup:  # menetelmät yhdistetään: aiemmin P, nyt L → P+L
+            used = set((dup["method"] or "P").split("+")) | set(method.split("+"))
+            method = "+".join(m for m in ("P", "L") if m in used)
         values = dict(
             ticker=sr.ticker, scan_id=scan_id, detected_as_of=_d(sr.as_of), is_test=int(is_test),
             sign=sr.sign, confidence=sr.confidence, tc=_d(tc), tc_years=b.tc,
             tc_p10=_d(sr.tc_p10), tc_p90=_d(sr.tc_p90),
             window_start=_d(from_years(b.t1)),
             m=b.m, omega=b.omega, A=b.A, B=b.B, C1=b.C1, C2=b.C2, r2=b.r2, move=sr.change,
-            last_updated=_now(),
+            last_updated=_now(), method=method, scan_id_l=scan_id_l,
         )
         if dup:
             bubble_id = dup["id"]
@@ -160,13 +181,17 @@ class Storage:
         self.con.commit()
         return bubble_id
 
-    # Havaitsemispäivän conf+/conf− tulevat kuplan skannauksesta; ilman skannausriviä
-    # käytetään kuplan omaa confidencea sen suunnan mukaan
+    # Havaitsemispäivän conf+/conf− tulevat kuplan skannauksista (s = pitkä, sl = lyhyt);
+    # ilman pitkän skannauksen riviä käytetään kuplan omaa confidencea sen suunnan mukaan.
+    # Ennen lyhyttä menetelmää tallennetuilla kuplilla C L -arvot ovat NULL.
     _BUBBLE_SELECT = """
         SELECT b.*,
                COALESCE(s.conf_pos, CASE WHEN b.sign = 'neg' THEN 0 ELSE b.confidence END) AS conf_pos,
-               COALESCE(s.conf_neg, CASE WHEN b.sign = 'neg' THEN b.confidence ELSE 0 END) AS conf_neg
-        FROM bubbles b LEFT JOIN scans s ON s.id = b.scan_id"""
+               COALESCE(s.conf_neg, CASE WHEN b.sign = 'neg' THEN b.confidence ELSE 0 END) AS conf_neg,
+               COALESCE(s.move, b.move) AS move_p,
+               sl.conf_pos AS conf_pos_l, sl.conf_neg AS conf_neg_l, sl.move AS move_l
+        FROM bubbles b LEFT JOIN scans s ON s.id = b.scan_id
+                       LEFT JOIN scans sl ON sl.id = b.scan_id_l"""
 
     def list_bubbles(self) -> list[sqlite3.Row]:
         return self.con.execute(
@@ -181,6 +206,20 @@ class Storage:
             (bubble_id,)).fetchall()
         return pd.Series([r["price"] for r in rows],
                          index=pd.DatetimeIndex([r["date"] for r in rows]), dtype=float)
+
+    def confidence_history(self, ticker: str, method: str, sign: str | None) -> pd.Series:
+        """Confidence kuplan suuntaan as_of-päivittäin; samalta päivältä viimeisin ajo."""
+        col = "conf_neg" if sign == "neg" else "conf_pos"
+        rows = self.con.execute(
+            f"SELECT as_of, {col} AS conf FROM scans WHERE ticker=? AND COALESCE(method, 'P')=? "
+            "ORDER BY as_of, run_at, id", (ticker, method)).fetchall()
+        latest = {r["as_of"]: r["conf"] for r in rows}
+        return pd.Series(list(latest.values()), index=pd.DatetimeIndex(list(latest)), dtype=float)
+
+    def has_scan(self, ticker: str, as_of, method: str) -> bool:
+        return self.con.execute(
+            "SELECT 1 FROM scans WHERE ticker=? AND as_of=? AND COALESCE(method, 'P')=? LIMIT 1",
+            (ticker, _d(as_of), method)).fetchone() is not None
 
     def delete_bubble(self, bubble_id: int):
         self.con.execute("DELETE FROM bubbles WHERE id=?", (bubble_id,))

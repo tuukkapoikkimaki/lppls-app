@@ -3,7 +3,8 @@
 Työpöytäsovellus, joka etsii **tulevia** kuplia Didier Sornetten LPPLS-mallilla
 (log-periodic power law singularity). Sovellus sovittaa mallin moneen tähän päivään
 päättyvään aikaikkunaan ja hälyttää, kun riittävän moni sovitus ennustaa kriittisen
-hetken *tc* lähitulevaisuuteen. Havaitut kuplat tallennetaan, ja niiden toteutumista
+hetken *tc* lähitulevaisuuteen. Skannauksia on kaksi: **pitkä (P)**, jossa on 24 ikkunaa
+(~0,5–4 v), ja **lyhyt (L)**, jossa on 52 ikkunaa (~6 vk – 1 v). Havaitut kuplat tallennetaan, ja niiden toteutumista
 seurataan.
 
 > Tutkimus- ja opiskelukäyttöön. LPPLS-ennuste ei ole sijoitussuositus.
@@ -32,29 +33,39 @@ Asennuksen jälkeen sovelluksen voi käynnistää myös komennolla `.venv/bin/lp
    futuurit ja "-USD" kryptot). Omia
    tunnuksia lisätään Yahoo Finance -tunnuksilla, esim. `NVDA`.
 2. *Skannaa kaikki* skannaa listassa näkyvät tunnukset (hakukenttä rajaa joukkoa), ja
-   *Skannaa valitut* vain valitut. Yksi tunnus vie noin 9 s (4 ytimellä), joten koko
-   lista (195 tunnusta) vie noin 27 minuuttia.
+   *Skannaa valitut* vain valitut. Jokainen tunnus skannataan molemmilla menetelmillä.
+   Yksi tunnus vie noin 20 s (4 ytimellä), joten koko lista (195 tunnusta) vie noin tunnin.
 
    Raaka-aineiden hinnat ovat jatkuvia lähimmän sopimuksen futuurisarjoja. Sopimuksen
    vaihtuessa (roll) sarjaan voi tulla pieni hyppy, joka voi häiritä sovitusta.
-3. Taulukossa: confidence (+ = kupla, − = antikupla), mediaani-tc, tc-väli ja tila
-   🔴 kupla / 🟡 lähellä / ⚪ ei. Rivin valinta piirtää kuvaajan, ja *Tallenna PNG* tallentaa sen.
-4. **Kupla tallentuu automaattisesti** *Tallennetut kuplat* -välilehdelle, ja seuranta alkaa.
+3. Taulukossa: confidence molemmille menetelmille (*C P* = pitkä, *C L* = lyhyt; + = kupla,
+   − = antikupla), muutos 2 v ja 1 v, mediaani-tc, tc-väli ja tila kummallekin menetelmälle
+   (🔴 kupla / 🟡 lähellä / ⚪ ei). tc-sarakkeet tulevat kuplan havainneesta menetelmästä.
+   Rivin valinta piirtää kuvaajan. Nuolet ← / → vaihtavat pitkän ja lyhyen menetelmän
+   kuvaajan välillä, ja *Tallenna PNG* tallentaa näkyvän kuvaajan.
+4. **Kupla tallentuu automaattisesti** *Tallennetut kuplat* -välilehdelle, kun **kumpi tahansa**
+   menetelmä antaa tilan 🔴 kupla, ja seuranta alkaa. Jokainen skannaus tallentaa lisäksi
+   C P- ja C L -arvot, joista muodostuu confidence-historia.
 
 **Testitila:** avaa vasemman reunan *Testaus historiallisilla kuplilla* -osio ja ruksaa *Testitila: as-of-päivä*, jolloin sovellus olettaa, että "tänään"
 on valittu päivä. Pikavalinnoissa on Bitcoin 2017-12-01, Shanghai 2007-10-01 ja Shanghai 2015-06-01.
 Testikuplat merkitään erikseen.
 
 **Tallennetut kuplat**
-- *Päivitä sarjat* hakee seurattaville tunnuksille uuden datan ja arvioi jokaisen kuplan:
+- *Päivitä sarjat* hakee seurattaville tunnuksille uuden datan, skannaa ne molemmilla
+  menetelmillä (uudet confidence-pisteet; jo tänään skannatut ohitetaan) ja arvioi jokaisen kuplan:
   - **toteutui**: havainnon jälkeen huippu, jota seuraa ≥ 15 %:n pudotus 90 päivän sisällä
     (antikuplalla pohja ja nousu)
   - **ei toteutunut**: ennustettu tc-väli (vähintään ±30 pv) ohitettiin ilman käännettä
   - **odottaa**: väli on vielä kesken
-- *Conf +* ja *Conf −* ovat luottamusindikaattorit havaitsemispäivänä, eli niiden ikkunoiden
-  osuus, jotka näkivät nousukuplan (+) tai antikuplan (−).
+- *Menetelmä* kertoo, mikä havaitsi kuplan: P, L tai P+L.
+- *C P ±* ja *C L ±* ovat luottamusindikaattorit havaitsemispäivänä, eli niiden ikkunoiden
+  osuus, jotka näkivät nousukuplan (+) tai antikuplan (−). Ennen lyhyttä menetelmää
+  tallennetuilla kuplilla C L on "–".
 - *Ero (pv)* kertoo, kuinka paljon todellinen käänne poikkesi ennustetusta tc:stä.
 - Kuvaajassa havaintohetken data on sinisenä, toteuma oranssina, sovite mustana ja tc punaisena.
+  Oikealla asteikolla on confidence-historia kuplan suuntaan: **C P punaisena** ja
+  **C L vihreänä**. Jokainen skannaus lisää pisteen; samalta päivältä näytetään viimeisin.
 - Työkalurivin nuolet ← / → vaihtavat näkymää: 1) log-hinta, 2) hinta ilman logaritmia
   koko seuratulla jaksolla. Jos olet zoomannut, nuolet kulkevat ensin zoomaushistoriaa.
 
@@ -62,7 +73,7 @@ Testikuplat merkitään erikseen.
 
 Kuplaksi luokitellaan vain tilanne, jossa **sekä** LPPLS-malli että hinnannousu täyttävät ehdot.
 
-**1. Sovitukset:** noin 4 vuotta päivittäisiä päätöskursseja. Ikkunoita on 24 tasavälein
+**1. Sovitukset:** noin 4 vuotta päivittäisiä päätöskursseja. Pitkässä menetelmässä ikkunoita on 24 tasavälein
 125–1008 kauppapäivää eli noin puolesta vuodesta neljään vuoteen (lyhin kuten Zhang,
 Zhang & Sornette 2016). Kaikki ikkunat päättyvät
 as-of-päivään. A, B, C1 ja C2 ratkaistaan lineaarisesti, ja (tc, m, ω) haetaan Nelder–Meadilla
@@ -93,6 +104,14 @@ Antikuplalla vastaava ehto on lasku ≥ 50 %.
 | 🔴 kupla | confidence ≥ 10 %, mediaani-tc 6 kk sisällä, muutos ≥ 100 % |
 | 🟡 lähellä | confidence ≥ 5 % ja muutos ≥ 50 % |
 | ⚪ ei | muut |
+
+**5. Lyhyt menetelmä (L):** 52 tasavälistä ikkunaa 30–252 kauppapäivää (~6 vk – 1 v; lyhin
+kuten Sornetten lyhyen aikaskaalan indikaattoreissa). Suodatin, confidence-rajat ja horisontti
+ovat samat kuin pitkässä menetelmässä, mutta nousuehto lasketaan vuoden pohjasta: **≥ 50 %**
+kuplalle ja ≥ 25 % lähellä-tilalle (antikuplalla lasku ≥ 33 %). tc-raja on suhteessa
+ikkunaan (0,13 · ikkuna), joten lyhyet ikkunat hyväksyvät vain lähellä olevan tc:n, esim. vuoden ikkunassa noin 5 viikkoa.
+Siksi C L nousee tyypillisesti vasta aivan kuplan loppuvaiheessa. Esimerkiksi BTC 2017-12-01:
+C P 17 % ja C L 29 % (P+L), mutta Shanghai 2015-06-01: C P 17 % ja C L 0 %.
 
 Testikuplilla 6/8 tunnistuu kupliksi: BTC 2017, Shanghai 2007 (kaksi päivää), Shanghai 2015 ja
 Nasdaq 2000 (kaksi päivää). Nikkei 1989 jää tunnistamatta (nousu vain +69 %), samoin BTC

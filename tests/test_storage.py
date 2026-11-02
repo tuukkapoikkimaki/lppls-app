@@ -162,3 +162,58 @@ def test_upgrade_from_v6_adds_quantum_etf(tmp_path):
     assert "QTUM" in tickers
     assert "TSLA" not in tickers
     assert len(tickers) == before + 1
+
+
+def test_save_dual_and_confidence_history(store, cfg):
+    from lppls_app.scanner import scan_both
+
+    dual = scan_both("SYN", synthetic_bubble(), "2020-06-01", cfg)
+    bid = store.save_dual(dual, is_test=True)
+    b = store.get_bubble(bid)
+    assert b["method"] == dual.method
+    assert b["conf_pos"] == pytest.approx(dual.long.conf_pos)
+    assert b["conf_pos_l"] == pytest.approx(dual.short.conf_pos)
+    assert b["move_l"] == pytest.approx(dual.short.change)
+
+    # Uusi ajo samalle päivälle korvaa pisteen, eri päivä lisää uuden
+    store.save_scan(dual.short)
+    later = scan_series("SYN", synthetic_bubble(), "2020-05-15", cfg.short())
+    store.save_scan(later)
+    hist = store.confidence_history("SYN", "L", "pos")
+    assert list(hist.index) == [pd.Timestamp("2020-05-15"), pd.Timestamp("2020-06-01")]
+    assert hist.iloc[0] == pytest.approx(later.conf_pos)
+    assert len(store.confidence_history("SYN", "P", "pos")) == 1
+    assert store.has_scan("SYN", "2020-06-01", "L") and not store.has_scan("SYN", "2020-06-02", "L")
+
+
+def test_methods_merge_on_duplicate(store, detected):
+    a = store.save_bubble(detected, store.save_scan(detected), is_test=False)
+    b = store.save_bubble(detected, store.save_scan(detected), is_test=False, method="L")
+    assert a == b and store.get_bubble(a)["method"] == "P+L"
+
+
+def test_upgrade_from_v7_adds_method_columns(tmp_path):
+    import sqlite3
+
+    db = tmp_path / "v7.db"
+    con = sqlite3.connect(db)
+    # v7-skeeman scans- ja bubbles-taulut ilman uusia sarakkeita
+    con.executescript("""
+        CREATE TABLE scans (id INTEGER PRIMARY KEY, ticker TEXT, as_of TEXT, run_at TEXT,
+            conf_pos REAL, conf_neg REAL, tc_median TEXT, tc_p10 TEXT, tc_p90 TEXT, move REAL);
+        CREATE TABLE bubbles (id INTEGER PRIMARY KEY, ticker TEXT, scan_id INTEGER,
+            detected_as_of TEXT, is_test INTEGER, sign TEXT, confidence REAL,
+            tc TEXT, tc_years REAL, tc_p10 TEXT, tc_p90 TEXT, window_start TEXT,
+            m REAL, omega REAL, A REAL, B REAL, C1 REAL, C2 REAL, r2 REAL,
+            status TEXT DEFAULT 'odottaa', actual_peak_date TEXT, actual_peak_price REAL,
+            max_drawdown REAL, last_updated TEXT, tracking INTEGER DEFAULT 1, note TEXT, move REAL);
+        INSERT INTO scans VALUES (1, 'X', '2026-10-01', '2026-10-01T10:00', 0.2, 0, NULL, NULL, NULL, 1.5);
+        INSERT INTO bubbles(id, ticker, scan_id, detected_as_of, is_test, sign, confidence, tc)
+            VALUES (1, 'X', 1, '2026-10-01', 0, 'pos', 0.2, '2026-12-01');
+        PRAGMA user_version=7;""")
+    con.close()
+    s = Storage(db)
+    b = s.get_bubble(1)
+    assert b["method"] == "P" and b["conf_pos"] == pytest.approx(0.2)
+    assert b["conf_pos_l"] is None and b["move_p"] == pytest.approx(1.5)
+    assert len(s.confidence_history("X", "P", "pos")) == 1

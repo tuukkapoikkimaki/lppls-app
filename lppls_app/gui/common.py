@@ -79,6 +79,9 @@ class ChartPanel(QWidget):
     def clear(self, message: str = ""):
         self.pages = []
         self.page_label.clear()
+        for other in list(self.figure.axes):  # oikea asteikko (twinx) pois
+            if other is not self.ax:
+                other.remove()
         self.ax.clear()
         self.ax.set_axis_off()
         if message:

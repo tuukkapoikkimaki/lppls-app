@@ -15,7 +15,10 @@ from ..tracker import HIT, MISS, PENDING
 from .common import ChartPanel
 from .workers import UpdateWorker
 
-COLUMNS = ["#", "Tunnus", "Havaittu", "Conf +", "Conf −", "Muutos 2 v", "Ennustettu tc", "tc-väli", "Todellinen käänne",
+# Menetelmä: P = pitkä, L = lyhyt, P+L = molemmat havaitsivat. C-sarakkeet ovat havaitsemispäivän
+# arvot; "–" = kupla tallennettiin ennen lyhyttä menetelmää.
+COLUMNS = ["#", "Tunnus", "Menetelmä", "Havaittu", "C P +", "C P −", "C L +", "C L −",
+           "Muutos 2 v", "Muutos 1 v", "Ennustettu tc", "tc-väli", "Todellinen käänne",
            "Ero (pv)", "Muutos", "Tila", "Laji", "Seuranta", "Päivitetty"]
 STATUS_COLOR = {HIT: QColor(210, 240, 210), MISS: QColor(240, 215, 215),
                 PENDING: QColor(255, 245, 205)}
@@ -114,10 +117,14 @@ class BubblesTab(QWidget):
             tc = pd.Timestamp(b["tc"])
             peak = pd.Timestamp(b["actual_peak_date"]) if b["actual_peak_date"] else None
             move = b["max_drawdown"]
+
+            def pct(v, sign=False):
+                return "–" if v is None else (f"{v:+.0%}" if sign else f"{v:.0%}")
+
             values = [
-                str(b["id"]), b["ticker"], b["detected_as_of"],
-                f"{b['conf_pos']:.0%}", f"{b['conf_neg']:.0%}",
-                f"{b['move']:+.0%}" if b["move"] is not None else "–", b["tc"],
+                str(b["id"]), b["ticker"], b["method"] or "P", b["detected_as_of"],
+                pct(b["conf_pos"]), pct(b["conf_neg"]), pct(b["conf_pos_l"]), pct(b["conf_neg_l"]),
+                pct(b["move_p"], True), pct(b["move_l"], True), b["tc"],
                 f"{b['tc_p10']} … {b['tc_p90']}",
                 f"{peak:%Y-%m-%d}" if peak is not None else "–",
                 str((peak - tc).days) if peak is not None else "–",
@@ -151,11 +158,14 @@ class BubblesTab(QWidget):
             return
         snap = self.storage.bubble_prices(b["id"])
         follow = self.storage.tracked_prices(b["ticker"], after=b["detected_as_of"])
+        # Confidence-historia kuplan suuntaan: jokainen skannaus lisää pisteen
+        conf = {m: self.storage.confidence_history(b["ticker"], m, b["sign"]) for m in ("P", "L")}
         safe = b["ticker"].replace("^", "").replace("=", "")
         # Sama näkymä säilyy, kun vaihdetaan kuplasta toiseen
         self.chart.set_pages([
-            ("log-hinta", lambda ax: draw_tracked(ax, b, snap, follow)),
-            ("hinta ilman logaritmia", lambda ax: draw_tracked(ax, b, snap, follow, log=False)),
+            ("log-hinta", lambda ax: draw_tracked(ax, b, snap, follow, conf=conf)),
+            ("hinta ilman logaritmia",
+             lambda ax: draw_tracked(ax, b, snap, follow, log=False, conf=conf)),
         ], f"{safe}_tc-{b['tc']}.png", page=self.chart.page)
         self.stop_track_btn.setText("Lopeta seuranta" if b["tracking"] else "Jatka seurantaa")
 
@@ -165,10 +175,15 @@ class BubblesTab(QWidget):
         self.progress.setValue(0)
         self.progress.show()
         self.worker = UpdateWorker(self.cfg, self.storage.path)
-        self.worker.progress.connect(lambda d, t: (self.progress.setMaximum(t), self.progress.setValue(d)))
+        self.worker.progress.connect(self.on_progress)
         self.worker.done.connect(self.on_updated)
         self.worker.finished.connect(self._worker_finished)
         self.worker.start()
+
+    def on_progress(self, done: int, total: int, msg: str):
+        self.progress.setMaximum(total)
+        self.progress.setValue(done)
+        self.status_message.emit(msg)
 
     def _worker_finished(self):
         self.worker = None

@@ -68,3 +68,26 @@ def test_update_all_incremental(cfg):
     s2 = update_all(store, cfg, today="2020-10-05", fetch=fake_fetch)
     assert calls[1] > pd.Timestamp("2020-09-29")  # jatkaa siitä mihin jäi
     assert s2.new_rows <= 5
+
+
+def test_rescan_tracked_saves_both_methods_once(cfg):
+    from lppls_app.scanner import scan_both
+    from lppls_app.tracker import UpdateSummary, rescan_tracked
+
+    store = Storage(":memory:", seed_watchlist=False)
+    sr = scan_series("SYN", synthetic_bubble(), "2020-06-01", cfg)
+    store.save_bubble(sr, store.save_scan(sr), is_test=True)
+    series = synthetic_bubble(as_of="2020-06-01")
+    scans = []
+
+    def fake_scan(ticker, s, as_of, cfg, executor=None, progress=None):
+        scans.append(ticker)
+        return scan_both(ticker, s, as_of, cfg)
+
+    summary = UpdateSummary()
+    kw = dict(today="2020-06-01", scan=fake_scan, prices=lambda *a, **k: series)
+    rescan_tracked(store, cfg, summary, **kw)
+    assert summary.rescanned == ["SYN"] and scans == ["SYN"]
+    assert len(store.confidence_history("SYN", "L", "pos")) == 1
+    rescan_tracked(store, cfg, summary, **kw)  # sama päivä: ei uudelleen
+    assert scans == ["SYN"]

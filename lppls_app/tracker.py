@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from .config import Config
-from .data import DataError, NoDataError, fetch_yahoo
+from .data import DataError, NoDataError, fetch_yahoo, get_prices
+from .scanner import scan_both
 
 PENDING, HIT, MISS = "odottaa", "toteutui", "ei toteutunut"
 
@@ -23,10 +24,13 @@ class Outcome:
 class UpdateSummary:
     updated: list[str] = field(default_factory=list)
     new_rows: int = 0
+    rescanned: list[str] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)
 
     def text(self) -> str:
         msg = f"{len(self.updated)} sarjaa päivitetty, {self.new_rows} uutta päivää"
+        if self.rescanned:
+            msg += f", {len(self.rescanned)} tunnusta skannattu (C P ja C L)"
         if self.errors:
             msg += f", {len(self.errors)} virhettä: " + "; ".join(
                 f"{t}: {e}" for t, e in self.errors.items())
@@ -114,3 +118,31 @@ def update_all(storage, cfg: Config, today=None, fetch=fetch_yahoo,
         o = evaluate_outcome(b, bubble_series(storage, b), today, cfg)
         storage.update_outcome(b["id"], o.status, o.peak_date, o.peak_price, o.drawdown)
     return summary
+
+
+def rescan_tracked(storage, cfg: Config, summary: UpdateSummary, executor=None, today=None,
+                   progress=None, stop=lambda: False, scan=scan_both, prices=get_prices) -> None:
+    """Ajaa pitkän ja lyhyen skannauksen seurattaville tunnuksille tälle päivälle.
+
+    Tallentaa vain skannausrivit (confidence-historia); kuplia ei tallenneta tai päivitetä
+    tästä, vaan Skanneri-välilehdeltä. Jo tänään skannatut tunnukset ohitetaan.
+    """
+    today = pd.Timestamp(today or pd.Timestamp.today()).normalize()
+    tickers = [t for t in storage.tracked_tickers()
+               if not (storage.has_scan(t, today, "P") and storage.has_scan(t, today, "L"))]
+    for i, ticker in enumerate(tickers):
+        if stop():
+            break
+        try:
+            series = prices(storage, ticker, today - pd.Timedelta(days=cfg.lookback_days), today,
+                            cfg.cache_max_age_hours)
+            dual = scan(ticker, series, today, cfg, executor,
+                        (lambda d, t, i=i, ticker=ticker: progress(
+                            i * 100 + d * 100 // t, len(tickers) * 100,
+                            f"Skannataan {ticker} ({i + 1}/{len(tickers)})")) if progress else None)
+        except Exception as e:  # yksi virhe ei katkaise muita
+            summary.errors[ticker] = f"skannaus: {e}"
+            continue
+        storage.save_scan(dual.long)
+        storage.save_scan(dual.short)
+        summary.rescanned.append(ticker)
