@@ -67,7 +67,15 @@ Testikuplat merkitään erikseen.
   Oikealla asteikolla on confidence-historia kuplan suuntaan: **C P punaisena** ja
   **C L vihreänä**. Jokainen skannaus lisää pisteen; samalta päivältä näytetään viimeisin.
 - Työkalurivin nuolet ← / → vaihtavat näkymää: 1) log-hinta, 2) hinta ilman logaritmia
-  koko seuratulla jaksolla. Jos olet zoomannut, nuolet kulkevat ensin zoomaushistoriaa.
+  koko seuratulla jaksolla.
+
+**Kuvaajat (molemmat välilehdet)**
+- **Periodi:** kuvan alla on viivamainen valitsin. Vedä kahvoista periodin alkua ja loppua,
+  tai vedä kahvojen välistä janaa, jolloin koko periodi liukuu. Pystyakseli sovitetaan
+  valitun periodin dataan.
+- **Zoomaus:** paina hiiren rullaa kuvan päällä, niin zoomaus kytkeytyy päälle. Rulla eteen
+  zoomaa lähemmäs ja taakse kauemmas, ja kursorin kohta pysyy paikallaan. Uusi rullan
+  painallus lopettaa zoomauksen. Koti-painike (⌂) palauttaa koko kuvan.
 
 ## Miten havainto toimii
 
