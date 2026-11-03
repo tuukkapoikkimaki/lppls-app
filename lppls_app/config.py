@@ -216,6 +216,32 @@ THEME_WATCHLIST = [
     ("ITA", "Puolustus ja ilmailu (iShares)"),
     ("XAR", "Puolustus ja ilmailu (SPDR)"),
     ("QTUM", "Kvanttilaskenta (Defiance Quantum ETF)"),
+    # v9: tekoäly ja muut teemat
+    ("CHAT", "Generatiivinen tekoäly (Roundhill)"),
+    ("ARTY", "Tekoäly ja teknologia (iShares Future AI & Tech)"),
+    ("IGPT", "Tekoäly ja ohjelmistot (Invesco)"),
+    ("THNQ", "Tekoäly (ROBO Global)"),
+    ("WTAI", "Tekoäly ja innovaatio (WisdomTree)"),
+    ("ROBO", "Robotiikka ja automaatio (ROBO Global)"),
+    ("DTCR", "Datakeskukset ja digitaalinen infra"),
+    ("IGV", "Ohjelmistoyhtiöt (iShares)"),
+    ("SKYY", "Pilvipalvelut"),
+    ("CIBR", "Kyberturvallisuus"),
+    ("GRID", "Sähköverkot ja älyverkko"),
+    ("NLR", "Ydinvoima ja uraani (VanEck)"),
+    ("REMX", "Harvinaiset maametallit"),
+    ("COPX", "Kuparikaivosyhtiöt"),
+    ("SIL", "Hopeakaivosyhtiöt"),
+    ("UFO", "Avaruusteollisuus"),
+    ("ARKX", "Avaruus ja puolustus (ARK)"),
+    ("ARKG", "Genomiikka (ARK)"),
+    ("XBI", "Bioteknologia (SPDR)"),
+    ("FINX", "Fintech"),
+    ("BLOK", "Lohkoketjuyhtiöt"),
+    ("DRIV", "Sähkö- ja itseohjautuvat autot"),
+    ("PAVE", "USA:n infrastruktuuri"),
+    ("IPO", "Listautumisannit (Renaissance IPO)"),
+    ("MSOS", "Kannabis (USA)"),
     # Momentum-osakkeet
     ("NVDA", "NVIDIA"),
     ("AMD", "AMD"),
@@ -244,6 +270,11 @@ THEME_WATCHLIST = [
     ("ARGT", "Argentiina (ETF)"),
     ("EPOL", "Puola (ETF)"),
 ]
+
+# Skeemaversiossa 9 lisätyt teematunnukset (vanhoihin kantoihin lisätään vain nämä)
+THEME_V9 = {"CHAT", "ARTY", "IGPT", "THNQ", "WTAI", "ROBO", "DTCR", "IGV", "SKYY", "CIBR", "GRID",
+            "NLR", "REMX", "COPX", "SIL", "UFO", "ARKX", "ARKG", "XBI", "FINX", "BLOK", "DRIV",
+            "PAVE", "IPO", "MSOS"}
 
 DEFAULT_WATCHLIST = INDEX_WATCHLIST + COMMODITY_WATCHLIST + CRYPTO_WATCHLIST + THEME_WATCHLIST
 

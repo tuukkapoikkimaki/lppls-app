@@ -8,13 +8,14 @@ from pathlib import Path
 import pandas as pd
 
 from .config import (COMMODITY_WATCHLIST, CRYPTO_WATCHLIST, DEFAULT_WATCHLIST, INDEX_WATCHLIST,
-                     THEME_WATCHLIST)
+                     THEME_V9, THEME_WATCHLIST)
 from .model import from_years
 from .scanner import DualScan, ScanResult
 
-SCHEMA_VERSION = 8  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
+SCHEMA_VERSION = 9  # 2: 75 indeksiä, 3: move-sarake, 4: 39 raaka-ainetta, 5: 40 kryptoa,
                     # 6: 40 teemaa/osaketta/sektoria, 7: kvanttilaskenta (QTUM),
-                    # 8: lyhyt menetelmä (method-sarakkeet, scan_id_l)
+                    # 8: lyhyt menetelmä (method-sarakkeet, scan_id_l),
+                    # 9: 25 tekoäly- ja teemarahastoa
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS watchlist (
@@ -76,7 +77,8 @@ class Storage:
                 seed = (INDEX_WATCHLIST if version < 2 else []) + \
                        (COMMODITY_WATCHLIST if version < 4 else []) + \
                        (CRYPTO_WATCHLIST if version < 5 else []) + \
-                       (THEME_WATCHLIST if version < 7 else [])  # v7: +QTUM; muut ohitetaan
+                       (THEME_WATCHLIST if version < 7 else  # v7: +QTUM; muut ohitetaan
+                        [x for x in THEME_WATCHLIST if x[0] in THEME_V9] if version < 9 else [])
             self.con.executemany(
                 "INSERT INTO watchlist(ticker, name, added, active) VALUES (?,?,?,1) "
                 "ON CONFLICT(ticker) DO NOTHING",

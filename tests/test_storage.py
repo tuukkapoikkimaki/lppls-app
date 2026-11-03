@@ -161,7 +161,24 @@ def test_upgrade_from_v6_adds_quantum_etf(tmp_path):
     tickers = [r["ticker"] for r in Storage(db).list_watchlist()]
     assert "QTUM" in tickers
     assert "TSLA" not in tickers
-    assert len(tickers) == before + 1
+    assert len(tickers) == before + 1  # v9-teemat olivat jo kannassa
+
+
+def test_upgrade_from_v8_adds_ai_themes_only(tmp_path):
+    from lppls_app.config import THEME_V9
+
+    db = tmp_path / "v8.db"
+    s = Storage(db)
+    s.con.executemany("DELETE FROM watchlist WHERE ticker=?", [(t,) for t in THEME_V9])
+    s.remove_ticker("NVDA")  # käyttäjä poisti
+    s.con.execute("PRAGMA user_version=8")
+    s.con.commit()
+    before = len(s.list_watchlist())
+    s.close()
+
+    tickers = [r["ticker"] for r in Storage(db).list_watchlist()]
+    assert "CHAT" in tickers and "NVDA" not in tickers
+    assert len(tickers) == before + len(THEME_V9)
 
 
 def test_save_dual_and_confidence_history(store, cfg):
