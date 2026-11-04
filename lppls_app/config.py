@@ -327,6 +327,7 @@ class Config:
 
     # Seuranta
     min_tolerance_days: int = 30
+    turn_threshold: float = 0.05   # käänne: hinta 5 % aiemmasta huipusta alas (antikupla: pohjasta ylös)
     crash_threshold: float = 0.15
     crash_window_days: int = 90
 

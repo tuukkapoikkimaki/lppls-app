@@ -91,3 +91,40 @@ def test_rescan_tracked_saves_both_methods_once(cfg):
     assert len(store.confidence_history("SYN", "L", "pos")) == 1
     rescan_tracked(store, cfg, summary, **kw)  # sama päivä: ei uudelleen
     assert scans == ["SYN"]
+
+
+def test_turn_is_first_peak_with_5_percent_drop(cfg):
+    from lppls_app.tracker import find_turn
+
+    # 4 %:n notkahdus ei ole käänne; 120 -> 113 (−5,8 %) on
+    s = _series([("2020-06-01", 100), ("2020-06-05", 110), ("2020-06-08", 106),
+                 ("2020-06-20", 120), ("2020-06-25", 113), ("2020-07-10", 130)])
+    assert find_turn(s, pos=True, threshold=0.05) == pd.Timestamp("2020-06-20")
+    o = evaluate_outcome(BUBBLE, pd.concat([s, _series([("2020-08-01", 95)])]), "2020-12-01", cfg)
+    assert o.peak_date == pd.Timestamp("2020-06-20") and o.status == HIT  # 120 -> 95 = −21 %
+
+
+def test_turn_without_big_drop_is_miss(cfg):
+    s = _series([("2020-06-01", 100), ("2020-07-10", 120), ("2020-07-15", 113),
+                 ("2020-08-01", 118), ("2020-10-01", 125)])
+    o = evaluate_outcome(BUBBLE, s, "2020-12-01", cfg)
+    assert o.peak_date == pd.Timestamp("2020-07-10") and o.status == MISS
+
+
+def test_no_turn_yet_is_pending(cfg):
+    s = _series([("2020-06-01", 100), ("2020-07-01", 110), ("2020-07-05", 107)])  # −2,7 %
+    o = evaluate_outcome(BUBBLE, s, "2020-07-06", cfg)
+    assert o.status == PENDING and o.peak_date is None
+
+
+def test_turn_after_window_is_miss(cfg):
+    s = _series([("2020-06-01", 100), ("2020-10-01", 150), ("2020-10-10", 100)])
+    assert evaluate_outcome(BUBBLE, s, "2021-01-01", cfg).status == MISS
+
+
+def test_antibubble_turn_is_5_percent_rise_from_low(cfg):
+    from lppls_app.tracker import find_turn
+
+    s = _series([("2020-06-01", 100), ("2020-06-10", 80), ("2020-06-12", 83),
+                 ("2020-07-01", 70), ("2020-07-05", 74)])
+    assert find_turn(s, pos=False, threshold=0.05) == pd.Timestamp("2020-07-01")

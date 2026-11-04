@@ -55,10 +55,13 @@ Testikuplat merkitään erikseen.
 **Tallennetut kuplat**
 - *Päivitä sarjat* hakee seurattaville tunnuksille uuden datan, skannaa ne molemmilla
   menetelmillä (uudet confidence-pisteet; jo tänään skannatut ohitetaan) ja arvioi jokaisen kuplan:
-  - **toteutui**: havainnon jälkeen huippu, jota seuraa ≥ 15 %:n pudotus 90 päivän sisällä
-    (antikuplalla pohja ja nousu)
-  - **ei toteutunut**: ennustettu tc-väli (vähintään ±30 pv) ohitettiin ilman käännettä
-  - **odottaa**: väli on vielä kesken
+  - **toteutunut käänne** on havainnon jälkeinen ensimmäinen huippu, josta hinta on pudonnut
+    **5 %** (antikuplalla ensimmäinen pohja, josta hinta on noussut 5 %)
+  - **toteutui**: käänne tuli viimeistään tc-välin lopussa, ja sitä seurasi ≥ 15 %:n pudotus
+    (antikuplalla nousu) 90 päivän sisällä
+  - **ei toteutunut**: tc-väli (vähintään ±30 pv) ohitettiin ilman käännettä, käänne tuli vasta
+    välin jälkeen, tai käänteen jälkeinen pudotus jäi 90 päivässä alle 15 %:n
+  - **odottaa**: käännettä ei vielä ole ja väli on kesken, tai käänteestä on alle 90 päivää
 - *Menetelmä* kertoo, mikä havaitsi kuplan: P, L tai P+L.
 - *C P ±* ja *C L ±* ovat luottamusindikaattorit havaitsemispäivänä, eli niiden ikkunoiden
   osuus, jotka näkivät nousukuplan (+) tai antikuplan (−). Ennen lyhyttä menetelmää

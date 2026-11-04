@@ -45,23 +45,39 @@ def tolerance(bubble, cfg: Config) -> tuple[pd.Timestamp, pd.Timestamp]:
     return lo, hi
 
 
+def find_turn(prices: pd.Series, pos: bool, threshold: float) -> pd.Timestamp | None:
+    """Ensimmäinen käänne: huippu, jonka jälkeen hinta on laskenut threshold verran
+    siihenastisesta huipusta (antikuplalla pohja, josta hinta on noussut threshold verran).
+    """
+    if prices.empty:
+        return None
+    if pos:
+        move = 1.0 - prices / prices.cummax()
+    else:
+        move = prices / prices.cummin() - 1.0
+    hit = move[move >= threshold - 1e-12]
+    if hit.empty:
+        return None
+    before = prices[prices.index <= hit.index[0]]
+    return before.idxmax() if pos else before.idxmin()
+
+
 def evaluate_outcome(bubble, prices: pd.Series, today, cfg: Config) -> Outcome:
     """Vertaa jäädytettyä ennustetta toteutuneisiin hintoihin.
 
-    Positiivinen kupla toteutuu, jos havainnon ja toleranssivälin lopun välillä on huippu, jota seuraa vähintään
-    crash_threshold-suuruinen pudotus crash_window_days-päivän sisällä. Negatiivinen
-    (antikupla) peilikuvana: pohja ja sitä seuraava nousu.
+    Toteutunut käänne on havainnon jälkeinen ensimmäinen huippu, josta hinta on pudonnut
+    turn_threshold (5 %) verran (antikuplalla pohja, josta noussut 5 %). Kupla toteutuu, jos
+    käänne osuu viimeistään toleranssivälin loppuun ja sitä seuraa vähintään
+    crash_threshold-suuruinen pudotus (antikuplalla nousu) crash_window_days-päivän sisällä.
     """
     today = pd.Timestamp(today).normalize()
     _, hi = tolerance(bubble, cfg)
     pos = bubble["sign"] != "neg"
-    # Käännettä haetaan havainnosta toleranssivälin loppuun; aikainen käänne näkyy
-    # negatiivisena erona tc:hen
-    seg = prices[(prices.index > pd.Timestamp(bubble["detected_as_of"])) & (prices.index <= hi)]
-    if seg.empty:
+    # Aikainen käänne näkyy negatiivisena erona tc:hen
+    seg = prices[prices.index > pd.Timestamp(bubble["detected_as_of"])]
+    peak_date = find_turn(seg, pos, cfg.turn_threshold)
+    if peak_date is None:
         return Outcome(PENDING if today <= hi else MISS)
-
-    peak_date = seg.idxmax() if pos else seg.idxmin()
     peak = float(seg[peak_date])
     after = prices[(prices.index > peak_date)
                    & (prices.index <= peak_date + pd.Timedelta(days=cfg.crash_window_days))]
@@ -72,10 +88,12 @@ def evaluate_outcome(bubble, prices: pd.Series, today, cfg: Config) -> Outcome:
     else:
         move = float(after.max()) / peak - 1.0
 
-    if move >= cfg.crash_threshold:
+    if peak_date > hi:  # käänne tuli vasta ennustevälin jälkeen
+        status = MISS
+    elif move >= cfg.crash_threshold:
         status = HIT
-    elif today <= hi or today <= peak_date + pd.Timedelta(days=cfg.crash_window_days):
-        status = PENDING
+    elif today <= peak_date + pd.Timedelta(days=cfg.crash_window_days):
+        status = PENDING  # pudotus voi vielä syventyä
     else:
         status = MISS
     return Outcome(status, peak_date, peak, move)

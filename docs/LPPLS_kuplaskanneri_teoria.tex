@@ -80,7 +80,8 @@ lisäksi vähintään kaksinkertaistunut kahdessa vuodessa (lyhyessä menetelmä
 vähintään 50\,\% vuodessa). Jälkimmäinen ehto perustuu Greenwoodin, Shleiferin ja Youn havaintoon, että
 näin suuri nousu nostaa romahduksen todennäköisyyden yli puoleen. Havaitut kuplat tallennetaan
 tietokantaan, jokaisesta skannauksesta kertyy $C_P$- ja $C_L$-aikasarja, ja sovellus seuraa, toteutuiko ennustettu käänne: kupla katsotaan toteutuneeksi,
-jos ennustetun hetken lähellä tulee huippu ja sitä seuraa vähintään 15\,\%:n pudotus. Ehtoja
+jos ennustetun hetken lähellä tulee käänne (ensimmäinen 5\,\%:n lasku huipusta) ja sitä seuraa
+vähintään 15\,\%:n pudotus. Ehtoja
 testattiin historiallisilla kuplilla, kuten Bitcoinin vuoden 2017, Shanghain pörssin vuosien
 2007 ja 2015 sekä Nasdaqin vuoden 2000 kuplilla: pitkä menetelmä tunnisti kuusi kahdeksasta,
 ja kriittisen hetken arvio osui 0--4 viikon päähän todellisesta huipusta. Lyhyt menetelmä
@@ -403,10 +404,12 @@ Lopullinen luokitus yhdistää luottamusindikaattorin ja hinnannousun
 tallennetaan tietokantaan, jos kumpi tahansa menetelmä luokittelee tilanteen kuplaksi, ja
 tallenteeseen merkitään havainnut menetelmä (P, L tai P+L).
 Tallennettava ennuste jäädytetään: parametreja ei myöhemmin päivitetä, vaan ennustetta verrataan
-uuteen dataan. Seurannassa etsitään huippu $t^*$ havaintopäivän ja ennustevälin lopun välistä.
-Kupla on \emph{toteutunut}, jos huippua seuraa 90 päivän sisällä vähintään 15\,\%:n pudotus, eli
-$1 - \min_s p(s)/p(t^*) \ge 0.15$. Tila on \emph{ei toteutunut}, jos ennusteväli (vähintään
-$\pm 30$ päivää) ohitetaan ilman pudotusta, ja muuten \emph{odottaa}.
+uuteen dataan. Toteutunut käänne $t^*$ on havaintopäivän jälkeinen ensimmäinen huippu, josta hinta
+on pudonnut 5\,\% eli $p(t)/\max_{s\le t} p(s) \le 0.95$ (antikuplalla pohja ja 5\,\%:n nousu).
+Kupla on \emph{toteutunut}, jos $t^*$ osuu viimeistään ennustevälin loppuun ja käännettä seuraa 90
+päivän sisällä vähintään 15\,\%:n pudotus, eli $1 - \min_s p(s)/p(t^*) \ge 0.15$. Muuten tila on
+\emph{ei toteutunut} (ennusteväli, vähintään $\pm 30$ päivää, ohitetaan ilman käännettä tai pudotus
+jää pieneksi) tai \emph{odottaa}.
 
 \begin{table}[htbp]
   \centering\small
