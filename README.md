@@ -14,7 +14,7 @@ seurataan.
 Vaatii Python 3.10+ ja Linuxissa Qt:n xcb-kirjaston (Debian/Ubuntu/Mint: `sudo apt install libxcb-cursor0`).
 
 ```bash
-git clone https://github.com/<käyttäjä>/lppls-app.git
+git clone https://github.com/tuukkapoikkimaki/lppls-app.git
 cd lppls-app
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
