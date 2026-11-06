@@ -6,3 +6,4 @@ __pycache__/
 *.png
 docs/build/
 !docs/fig/*.png
+.claude/settings.local.json

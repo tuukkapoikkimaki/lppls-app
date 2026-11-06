@@ -11,14 +11,23 @@ seurataan.
 
 ## Asennus ja käynnistys
 
+Vaatii Python 3.10+ ja Linuxissa Qt:n xcb-kirjaston (Debian/Ubuntu/Mint: `sudo apt install libxcb-cursor0`).
+
 ```bash
-cd ~/Desktop/Hommat/10_projektit/lppls-app
+git clone https://github.com/<käyttäjä>/lppls-app.git
+cd lppls-app
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
 .venv/bin/python -m lppls_app
 ```
 
 Asennuksen jälkeen sovelluksen voi käynnistää myös komennolla `.venv/bin/lppls-app`.
+
+**Käynnistyskuvake** (Linux-työpöytä): projektikansiossa ajettuna tämä lisää sovelluksen valikkoon.
+
+```bash
+sed "s|@APPDIR@|$PWD|g" assets/lppls-app.desktop > ~/.local/share/applications/lppls-app.desktop
+```
 
 ## Käyttö
 
@@ -169,3 +178,8 @@ Tietokanta: `~/.local/share/lppls-app/bubbles.db` (polun voi vaihtaa ympäristö
 ```bash
 .venv/bin/pytest
 ```
+
+## Lisenssi
+
+[MIT](LICENSE). Hintadata haetaan Yahoo Financesta [yfinance](https://github.com/ranaroussi/yfinance)-kirjastolla,
+ja sen käyttöön sovelletaan Yahoon ehtoja.
